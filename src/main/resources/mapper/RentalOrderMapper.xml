@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.outdoor.rental.mapper.RentalOrderMapper">
+
+    <resultMap id="BaseResultMap" type="com.outdoor.rental.entity.RentalOrder">
+        <id     column="id"                     property="id"/>
+        <result column="order_no"               property="orderNo"/>
+        <result column="user_id"                property="userId"/>
+        <result column="gear_id"                property="gearId"/>
+        <result column="rental_days"            property="rentalDays"/>
+        <result column="rent_out_time"          property="rentOutTime"/>
+        <result column="expected_return_time"   property="expectedReturnTime"/>
+        <result column="actual_return_time"     property="actualReturnTime"/>
+        <result column="order_status"           property="orderStatus"/>
+        <result column="total_fee"              property="totalFee"/>
+        <result column="remark"                 property="remark"/>
+        <result column="create_time"            property="createTime"/>
+        <result column="update_time"            property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, order_no, user_id, gear_id, rental_days, rent_out_time,
+        expected_return_time, actual_return_time, order_status, total_fee,
+        remark, create_time, update_time
+    </sql>
+
+    <!-- 多条件复合分页查询 -->
+    <select id="selectOrderPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM rental_order
+        <where>
+            <if test="query.orderNo != null and query.orderNo != ''">
+                AND order_no LIKE CONCAT('%', #{query.orderNo}, '%')
+            </if>
+            <if test="query.userId != null">
+                AND user_id = #{query.userId}
+            </if>
+            <if test="query.gearId != null">
+                AND gear_id = #{query.gearId}
+            </if>
+            <if test="query.orderStatus != null">
+                AND order_status = #{query.orderStatus}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
