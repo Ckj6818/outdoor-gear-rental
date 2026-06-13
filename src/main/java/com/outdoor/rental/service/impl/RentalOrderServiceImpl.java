@@ -18,6 +18,9 @@ import com.outdoor.rental.service.RentalOrderTxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -63,6 +66,57 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     }
 
     @Override
+    public RentalOrder payOrder(Long orderId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        RentalOrder order = getOrderOwnedByUser(orderId, userId);
+
+        if (order.getOrderStatus() == null || order.getOrderStatus() != 0) {
+            throw new BusinessException(400, "仅待支付订单可执行支付");
+        }
+        if (order.getRentalDays() == null || order.getRentalDays() <= 0) {
+            throw new BusinessException(400, "订单租赁天数异常，无法支付");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        order.setOrderStatus(1);
+        order.setRentOutTime(now);
+        order.setExpectedReturnTime(now.plusDays(order.getRentalDays()));
+        rentalOrderMapper.updateById(order);
+
+        log.info("用户 [{}] 支付订单 [{}]", userId, order.getOrderNo());
+        return order;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RentalOrder returnGear(Long orderId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        RentalOrder order = getOrderOwnedByUser(orderId, userId);
+
+        if (order.getOrderStatus() == null
+                || (order.getOrderStatus() != 1 && order.getOrderStatus() != 2)) {
+            throw new BusinessException(400, "仅借出中或已逾期订单可归还");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        order.setOrderStatus(3);
+        order.setActualReturnTime(now);
+
+        if (order.getExpectedReturnTime() != null && now.isAfter(order.getExpectedReturnTime())) {
+            order.setRemark(appendRemark(order.getRemark(), "逾期归还"));
+        }
+
+        int affectedRows = gearInfoMapper.restoreAvailableStock(order.getGearId());
+        if (affectedRows == 0) {
+            throw new BusinessException(400, "库存恢复失败，请联系管理员");
+        }
+
+        rentalOrderMapper.updateById(order);
+        log.info("用户 [{}] 归还订单 [{}]", userId, order.getOrderNo());
+        return order;
+    }
+
+    @Override
     public void update(RentalOrder rentalOrder) {
         if (rentalOrder.getId() == null) {
             throw new BusinessException(400, "订单ID不能为空");
@@ -89,6 +143,27 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         if (gearInfo == null) {
             throw new BusinessException(400, "装备不存在");
         }
+    }
+
+    private RentalOrder getOrderOwnedByUser(Long orderId, Long userId) {
+        RentalOrder order = getById(orderId);
+        if (!userId.equals(order.getUserId())) {
+            throw new BusinessException(403, "无权操作该订单");
+        }
+        return order;
+    }
+
+    private String appendRemark(String remark, String note) {
+        if (note == null || note.isBlank()) {
+            return remark;
+        }
+        if (remark == null || remark.isBlank()) {
+            return note;
+        }
+        if (remark.contains(note)) {
+            return remark;
+        }
+        return remark + "；" + note;
     }
 
     private void validateOrder(RentalOrder order) {

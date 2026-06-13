@@ -1,14 +1,19 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
     name: outdoor-gear-rental
+  config:
+    import: optional:classpath:application-local.yml
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/outdoor_gear_rental?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: ${MYSQL_PASSWORD:root}
   data:
     redis:
       host: localhost

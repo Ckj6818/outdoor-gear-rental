@@ -1,13 +1,19 @@
 package com.outdoor.rental.exception;
 
 import com.outdoor.rental.common.Result;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -37,8 +43,21 @@ public class GlobalExceptionHandler {
         return Result.fail(400, message);
     }
 
+    @ExceptionHandler({DataAccessException.class})
+    public Result<Void> handleDataAccessException(DataAccessException e) {
+        log.error("数据库操作异常", e);
+        return Result.fail(500, "数据库操作失败，请检查 MySQL 连接与表结构");
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public Result<Void> handleUsernameNotFoundException(UsernameNotFoundException e) {
+        return Result.fail(401, "用户不存在或 Token 已失效，请重新登录");
+    }
+
     @ExceptionHandler(Exception.class)
-    public Result<Void> handleException(Exception e) {
-        return Result.fail("系统异常：" + e.getMessage());
+    public ResponseEntity<Result<Void>> handleException(Exception e) {
+        log.error("系统异常", e);
+        Result<Void> body = Result.fail(500, "系统异常：" + e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

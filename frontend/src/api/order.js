@@ -9,3 +9,13 @@ export function getOrderPage(params) {
 export function createRentalOrder(data) {
   return request.post('/orders', data)
 }
+
+/** 模拟支付 */
+export function payOrder(orderId) {
+  return request.put(`/orders/${orderId}/pay`)
+}
+
+/** 归还装备 */
+export function returnGear(orderId) {
+  return request.put(`/orders/${orderId}/return`)
+}

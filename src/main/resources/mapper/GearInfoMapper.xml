@@ -53,4 +53,12 @@
           AND status = 1
     </update>
 
+    <!-- 归还装备时恢复可用库存 -->
+    <update id="restoreAvailableStock">
+        UPDATE gear_info
+        SET available_stock = available_stock + 1
+        WHERE id = #{gearId}
+          AND available_stock &lt; total_stock
+    </update>
+
 </mapper>

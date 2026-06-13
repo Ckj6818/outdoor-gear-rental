@@ -54,6 +54,26 @@ public class RentalOrderController {
     }
 
     /**
+     * 模拟支付
+     * PUT /api/orders/{id}/pay
+     */
+    @PutMapping("/{id}/pay")
+    public Result<RentalOrder> payOrder(@PathVariable Long id) {
+        RentalOrder order = rentalOrderService.payOrder(id);
+        return Result.success("支付成功", order);
+    }
+
+    /**
+     * 归还装备
+     * PUT /api/orders/{id}/return
+     */
+    @PutMapping("/{id}/return")
+    public Result<RentalOrder> returnGear(@PathVariable Long id) {
+        RentalOrder order = rentalOrderService.returnGear(id);
+        return Result.success("归还成功", order);
+    }
+
+    /**
      * 更新订单
      * PUT /api/orders/{id}
      */

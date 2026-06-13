@@ -1,13 +1,14 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getGearPage } from '@/api/gear'
-import { getOrderPage } from '@/api/order'
+import { getOrderPage, payOrder, returnGear } from '@/api/order'
 
 const router = useRouter()
 
 const loading = ref(false)
+const actionLoadingId = ref(null)
 const orderList = ref([])
 const total = ref(0)
 const gearNameMap = ref({})
@@ -119,6 +120,46 @@ function handleSizeChange(size) {
   fetchMyOrders()
 }
 
+async function handlePay(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确认支付订单 ${row.orderNo}？应付金额 ${formatMoney(row.totalFee)}`,
+      '模拟支付',
+      { type: 'warning', confirmButtonText: '确认支付', cancelButtonText: '取消' }
+    )
+    actionLoadingId.value = row.id
+    await payOrder(row.id)
+    ElMessage.success('支付成功，装备已借出')
+    await fetchMyOrders()
+  } catch (error) {
+    if (error !== 'cancel' && error?.message !== 'cancel') {
+      // 错误已由 axios 拦截器提示
+    }
+  } finally {
+    actionLoadingId.value = null
+  }
+}
+
+async function handleReturn(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确认归还订单 ${row.orderNo} 的装备？`,
+      '归还装备',
+      { type: 'warning', confirmButtonText: '确认归还', cancelButtonText: '取消' }
+    )
+    actionLoadingId.value = row.id
+    await returnGear(row.id)
+    ElMessage.success('归还成功，库存已恢复')
+    await fetchMyOrders()
+  } catch (error) {
+    if (error !== 'cancel' && error?.message !== 'cancel') {
+      // 错误已由 axios 拦截器提示
+    }
+  } finally {
+    actionLoadingId.value = null
+  }
+}
+
 onMounted(async () => {
   await loadGearNameMap()
   await fetchMyOrders()
@@ -218,6 +259,30 @@ onMounted(async () => {
         </el-table-column>
 
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
+
+        <el-table-column label="操作" width="180" fixed="right" align="center">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.orderStatus === 0"
+              type="primary"
+              link
+              :loading="actionLoadingId === row.id"
+              @click="handlePay(row)"
+            >
+              去支付
+            </el-button>
+            <el-button
+              v-if="row.orderStatus === 1 || row.orderStatus === 2"
+              type="warning"
+              link
+              :loading="actionLoadingId === row.id"
+              @click="handleReturn(row)"
+            >
+              归还装备
+            </el-button>
+            <span v-if="row.orderStatus === 3" class="action-done">已完成</span>
+          </template>
+        </el-table-column>
       </el-table>
 
       <div v-if="total > 0" class="pagination-wrap">
@@ -298,6 +363,11 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.action-done {
+  color: #909399;
+  font-size: 13px;
 }
 
 :deep(.row-pending) {

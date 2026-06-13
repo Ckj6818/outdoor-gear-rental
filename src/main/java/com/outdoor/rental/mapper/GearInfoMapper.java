@@ -22,4 +22,11 @@ public interface GearInfoMapper extends BaseMapper<GearInfo> {
      * @return 受影响行数，0 表示库存不足
      */
     int deductAvailableStock(@Param("gearId") Long gearId);
+
+    /**
+     * 归还装备时恢复可用库存（不超过总库存）
+     *
+     * @return 受影响行数
+     */
+    int restoreAvailableStock(@Param("gearId") Long gearId);
 }

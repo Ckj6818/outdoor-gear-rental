@@ -16,6 +16,16 @@ public interface RentalOrderService {
      */
     RentalOrder createRentalOrder(CreateRentalOrderDTO dto);
 
+    /**
+     * 模拟支付：待支付 -> 借出中
+     */
+    RentalOrder payOrder(Long orderId);
+
+    /**
+     * 归还装备：恢复库存并更新订单为已归还
+     */
+    RentalOrder returnGear(Long orderId);
+
     void update(RentalOrder rentalOrder);
 
     void deleteById(Long id);

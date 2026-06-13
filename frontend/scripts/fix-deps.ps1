@@ -1,27 +1,23 @@
-# 修复 frontend 依赖：清理损坏临时目录并重新安装
+# 修复 frontend 依赖（Windows 权限/损坏包专用）
 $ErrorActionPreference = "Continue"
 Set-Location (Join-Path $PSScriptRoot "..")
 
-Write-Host "Stopping node processes..."
+Write-Host "1. Stopping node..."
 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
-Write-Host "Cleaning broken temp folders..."
+Write-Host "2. Removing broken temp folders..."
 Get-ChildItem node_modules -Force -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -like ".*" -or $_.Name -like ".element-plus*" -or $_.Name -like ".esbuild*" -or $_.Name -like ".rollup*" } |
-    ForEach-Object {
-        Write-Host "  Remove: $($_.Name)"
-        Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    Where-Object { $_.Name -like ".*" } |
+    ForEach-Object { Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
 
-Write-Host "Running npm install..."
-npm install
+Write-Host "3. Reinstalling element-plus..."
+Remove-Item -Recurse -Force "node_modules\element-plus","node_modules\@element-plus" -ErrorAction SilentlyContinue
+npm install element-plus@2.8.4 @element-plus/icons-vue@2.3.1
 
-if (Test-Path "node_modules\element-plus\dist\index.css") {
-    Write-Host "OK: element-plus installed successfully."
+$ok = (Test-Path "node_modules\element-plus\es\index.mjs") -and (Test-Path "node_modules\element-plus\dist\index.css")
+if ($ok) {
+    Write-Host "OK: dependencies fixed. Run: npm run dev"
 } else {
-    Write-Host "ERROR: element-plus still incomplete. Try deleting node_modules and run npm install again."
-    exit 1
+    Write-Host "WARN: element-plus incomplete. Delete node_modules and run: npm install"
 }
-
-Write-Host "Done. Run: npm run dev"
