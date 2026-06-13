@@ -46,7 +46,7 @@ function logout() {
         <el-button v-else type="primary" @click="goLogin">登录</el-button>
       </div>
     </el-header>
-    <el-main class="main">
+    <el-main class="main" :class="{ 'main--full': route.path === '/gears' }">
       <router-view />
     </el-main>
   </el-container>
@@ -55,54 +55,53 @@ function logout() {
 <style scoped>
 .layout {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg);
 }
 
 .header {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
-  padding: 0 24px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-md);
+  height: 64px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin-right: 32px;
+  gap: var(--space-xs);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  color: var(--color-text);
+  margin-right: var(--space-lg);
   white-space: nowrap;
 }
 
 .nav-menu {
   flex: 1;
   border-bottom: none;
+  background: transparent;
 }
 
 .user-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-sm);
 }
 
 .main {
-  padding: 24px;
+  padding: var(--space-lg) var(--space-md);
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
 }
-</style>
 
-<style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+.main--full {
+  max-width: none;
+  padding: 0;
+  overflow-x: hidden;
 }
 </style>

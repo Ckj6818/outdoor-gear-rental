@@ -1,18 +1,21 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import GearCard from '@/components/GearCard.vue'
 import { getGearPage } from '@/api/gear'
 import { createRentalOrder } from '@/api/order'
+import { getGearImages } from '@/utils/gearImages'
 
 const router = useRouter()
 
 const loading = ref(false)
+const listReady = ref(false)
 const tableData = ref([])
 const total = ref(0)
 
 const categoryOptions = [
-  { label: '全部分类', value: '' },
+  { label: '全部', value: '' },
   { label: '重装背包', value: '重装背包' },
   { label: '轻量化背包', value: '轻量化背包' },
   { label: '帐篷', value: '帐篷' },
@@ -23,8 +26,10 @@ const queryParams = reactive({
   gearName: '',
   category: '',
   pageNum: 1,
-  pageSize: 8
+  pageSize: 12
 })
+
+const showPagination = computed(() => total.value > queryParams.pageSize)
 
 const rentDialogVisible = ref(false)
 const rentLoading = ref(false)
@@ -36,6 +41,7 @@ const rentForm = reactive({
 
 async function fetchGearList() {
   loading.value = true
+  listReady.value = false
   try {
     const res = await getGearPage({
       gearName: queryParams.gearName || undefined,
@@ -45,19 +51,21 @@ async function fetchGearList() {
     })
     tableData.value = res.data.records || []
     total.value = res.data.total || 0
+    await nextTick()
+    listReady.value = true
   } finally {
     loading.value = false
   }
 }
 
-function handleSearch() {
+function selectCategory(value) {
+  if (queryParams.category === value) return
+  queryParams.category = value
   queryParams.pageNum = 1
   fetchGearList()
 }
 
-function handleReset() {
-  queryParams.gearName = ''
-  queryParams.category = ''
+function handleSearch() {
   queryParams.pageNum = 1
   fetchGearList()
 }
@@ -71,16 +79,6 @@ function handleSizeChange(size) {
   queryParams.pageSize = size
   queryParams.pageNum = 1
   fetchGearList()
-}
-
-function getCategoryTagType(category) {
-  const map = {
-    '重装背包': 'danger',
-    '轻量化背包': 'success',
-    '帐篷': 'warning',
-    '徒步鞋': 'primary'
-  }
-  return map[category] || 'info'
 }
 
 function openRentDialog(gear) {
@@ -124,111 +122,88 @@ onMounted(() => {
 
 <template>
   <div class="gear-list-page">
-    <el-card shadow="never" class="search-card">
-      <div class="page-title">
-        <h2>装备大厅</h2>
-        <p>精选户外背包、帐篷、徒步鞋，随时租赁出发</p>
+    <header class="filter-bar">
+      <div class="page-heading">
+        <h1 class="page-title">装备大厅</h1>
+        <p class="page-subtitle">精选户外装备，随时租赁出发</p>
       </div>
 
-      <el-form :inline="true" @submit.prevent="handleSearch">
-        <el-form-item label="装备名称">
-          <el-input
-            v-model="queryParams.gearName"
-            placeholder="输入装备名称搜索"
-            clearable
-            style="width: 220px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="装备分类">
-          <el-select
-            v-model="queryParams.category"
-            placeholder="请选择分类"
-            clearable
-            style="width: 180px"
-          >
-            <el-option
-              v-for="item in categoryOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="'Search'" @click="handleSearch">搜索</el-button>
-          <el-button :icon="'Refresh'" @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      <div class="search-row">
+        <input
+          v-model="queryParams.gearName"
+          class="search-input"
+          type="search"
+          placeholder="搜索装备名称"
+          @keyup.enter="handleSearch"
+        />
+      </div>
 
-    <div v-loading="loading" class="gear-content">
-      <el-empty v-if="!loading && tableData.length === 0" description="暂无装备数据" />
-
-      <el-row v-else :gutter="20">
-        <el-col
-          v-for="gear in tableData"
-          :key="gear.id"
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :lg="6"
+      <nav class="category-nav" aria-label="装备分类">
+        <button
+          v-for="item in categoryOptions"
+          :key="item.value"
+          type="button"
+          class="category-tab"
+          :class="{ active: queryParams.category === item.value }"
+          @click="selectCategory(item.value)"
         >
-          <el-card shadow="hover" class="gear-card">
-            <div class="gear-card-header">
-              <el-tag :type="getCategoryTagType(gear.category)" size="small">
-                {{ gear.category }}
-              </el-tag>
-              <el-tag v-if="gear.availableStock > 0" type="success" size="small" effect="plain">
-                可租 {{ gear.availableStock }}
-              </el-tag>
-              <el-tag v-else type="info" size="small" effect="plain">已租罄</el-tag>
-            </div>
+          {{ item.label }}
+        </button>
+      </nav>
+    </header>
 
-            <h3 class="gear-name" :title="gear.gearName">{{ gear.gearName }}</h3>
-            <p class="gear-brand">{{ gear.brand }}</p>
-            <p class="gear-desc">{{ gear.description || '暂无描述' }}</p>
+    <section class="gear-section">
+      <div v-if="loading" class="loading-state">
+        <span class="loading-text">Loading</span>
+      </div>
 
-            <div class="gear-meta">
-              <span class="price">¥{{ gear.dailyRent }}<small>/天</small></span>
-              <span class="stock">库存 {{ gear.availableStock }}/{{ gear.totalStock }}</span>
-            </div>
+      <p v-else-if="tableData.length === 0" class="empty-state">暂无装备数据</p>
 
-            <el-button
-              type="primary"
-              :disabled="gear.availableStock <= 0 || gear.status !== 1"
-              style="width: 100%"
-              @click="openRentDialog(gear)"
-            >
-              {{ gear.availableStock > 0 ? '立即租赁' : '暂无库存' }}
-            </el-button>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+      <div v-else class="gear-grid">
+        <div
+          v-for="(gear, index) in tableData"
+          :key="gear.id"
+          class="grid-item"
+          :class="{ 'is-visible': listReady }"
+          :style="{ animationDelay: `${index * 0.08}s` }"
+        >
+          <GearCard
+            :gear="gear"
+            :main-image="getGearImages(gear).main"
+            :hover-image="getGearImages(gear).hover"
+            @click="openRentDialog"
+          />
+        </div>
+      </div>
+    </section>
 
-    <div v-if="total > 0" class="pagination-wrap">
+    <footer v-if="showPagination" class="pagination-wrap">
       <el-pagination
         v-model:current-page="queryParams.pageNum"
         v-model:page-size="queryParams.pageSize"
-        :page-sizes="[8, 12, 16, 24]"
+        :page-sizes="[12, 16, 24]"
         :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        background
+        layout="total, prev, pager, next"
         @current-change="handlePageChange"
         @size-change="handleSizeChange"
       />
-    </div>
+    </footer>
 
-    <el-dialog v-model="rentDialogVisible" title="确认租赁" width="460px" destroy-on-close>
+    <el-dialog
+      v-model="rentDialogVisible"
+      title="确认租赁"
+      width="460px"
+      destroy-on-close
+      class="rent-dialog"
+    >
       <template v-if="currentGear">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="装备名称">{{ currentGear.gearName }}</el-descriptions-item>
-          <el-descriptions-item label="品牌">{{ currentGear.brand }}</el-descriptions-item>
-          <el-descriptions-item label="日租金">¥{{ currentGear.dailyRent }}</el-descriptions-item>
-        </el-descriptions>
+        <div class="rent-summary">
+          <p class="rent-brand">{{ currentGear.brand }}</p>
+          <h3 class="rent-name">{{ currentGear.gearName }}</h3>
+          <p class="rent-price">¥{{ currentGear.dailyRent }} / 天</p>
+        </div>
 
-        <el-form label-width="90px" style="margin-top: 20px">
+        <el-form label-width="90px" class="rent-form">
           <el-form-item label="租赁天数">
             <el-input-number v-model="rentForm.rentalDays" :min="1" :max="30" />
           </el-form-item>
@@ -244,7 +219,7 @@ onMounted(() => {
       </template>
 
       <template #footer>
-        <el-button @click="rentDialogVisible = false">取消</el-button>
+        <el-button link @click="rentDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="rentLoading" @click="submitRent">确认下单</el-button>
       </template>
     </el-dialog>
@@ -253,105 +228,235 @@ onMounted(() => {
 
 <style scoped>
 .gear-list-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  padding: var(--space-xl) clamp(24px, 5vw, 80px) calc(var(--space-xl) + 24px);
+  box-sizing: border-box;
 }
 
-.search-card {
-  border-radius: 12px;
+.filter-bar {
+  margin-bottom: calc(var(--space-xl) + 16px);
 }
 
-.page-title h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  color: #303133;
+.page-heading {
+  margin-bottom: var(--space-lg);
 }
 
-.page-title p {
-  margin: 0 0 20px;
-  color: #909399;
+.page-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-subtle);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.search-row {
+  margin-bottom: var(--space-lg);
+  max-width: 320px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
   font-size: 14px;
+  letter-spacing: var(--letter-spacing-base);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.3s ease;
 }
 
-.gear-content {
-  min-height: 320px;
+.search-input::placeholder {
+  color: var(--color-text-subtle);
 }
 
-.gear-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  min-height: 280px;
+.search-input:focus {
+  border-bottom-color: var(--color-text);
+}
+
+.category-nav {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 28px;
 }
 
-.gear-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.gear-name {
-  margin: 0 0 6px;
-  font-size: 16px;
-  color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gear-brand {
-  margin: 0 0 10px;
-  color: #606266;
-  font-size: 13px;
-}
-
-.gear-desc {
-  margin: 0 0 16px;
-  color: #909399;
-  font-size: 13px;
-  line-height: 1.5;
-  height: 40px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.gear-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 16px;
-}
-
-.price {
-  color: #f56c6c;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.price small {
+.category-tab {
+  padding: 0 0 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--color-text-subtle);
+  position: relative;
+  transition: color 0.3s ease;
 }
 
-.stock {
-  color: #909399;
-  font-size: 13px;
+.category-tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--color-text);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.category-tab:hover {
+  color: var(--color-text-muted);
+}
+
+.category-tab.active {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.category-tab.active::after {
+  transform: scaleX(1);
+}
+
+.gear-section {
+  min-height: 420px;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.gear-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 60px;
+}
+
+.grid-item {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+.grid-item.is-visible {
+  animation: staggerFadeIn 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pagination-wrap {
   display: flex;
   justify-content: center;
-  padding: 8px 0 16px;
+  margin-top: calc(var(--space-xl) + 24px);
+  padding-bottom: var(--space-md);
+}
+
+.pagination-wrap :deep(.el-pagination) {
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-hover-color: var(--color-text);
+}
+
+.pagination-wrap :deep(.el-pagination.is-background .el-pager li) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.rent-summary {
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.rent-brand {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.rent-name {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.rent-price {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.rent-form {
+  margin-top: var(--space-md);
 }
 
 .estimate-fee {
-  color: #f56c6c;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: var(--letter-spacing-base);
+  color: var(--color-text);
+}
+
+@media (max-width: 1200px) {
+  .gear-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .gear-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .gear-list-page {
+    padding-top: var(--space-lg);
+  }
+
+  .gear-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .category-nav {
+    gap: 20px;
+  }
 }
 </style>
