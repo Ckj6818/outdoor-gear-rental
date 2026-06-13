@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,6 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 @RequiredArgsConstructor
 public class RentalOrderTxServiceImpl implements RentalOrderTxService {
+
+    private static final BigDecimal WAIVER_RATE = new BigDecimal("0.10");
 
     private final GearInfoMapper gearInfoMapper;
     private final RentalOrderMapper rentalOrderMapper;
@@ -40,8 +43,13 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
             throw new BusinessException(400, "库存不足，抢租失败");
         }
 
-        BigDecimal totalFee = gearInfo.getDailyRent()
+        boolean hasWaiver = Boolean.TRUE.equals(dto.getHasDamageWaiver());
+        BigDecimal baseRent = gearInfo.getDailyRent()
                 .multiply(BigDecimal.valueOf(dto.getRentalDays()));
+        BigDecimal waiverFee = hasWaiver
+                ? baseRent.multiply(WAIVER_RATE).setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal totalFee = baseRent.add(waiverFee);
 
         RentalOrder order = new RentalOrder();
         order.setOrderNo(generateOrderNo());
@@ -49,6 +57,8 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
         order.setGearId(dto.getGearId());
         order.setRentalDays(dto.getRentalDays());
         order.setTotalFee(totalFee);
+        order.setHasDamageWaiver(hasWaiver);
+        order.setWaiverFee(waiverFee);
         order.setOrderStatus(0);
         order.setRemark(dto.getRemark());
         rentalOrderMapper.insert(order);

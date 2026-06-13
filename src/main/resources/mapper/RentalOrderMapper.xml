@@ -14,6 +14,8 @@
         <result column="actual_return_time"     property="actualReturnTime"/>
         <result column="order_status"           property="orderStatus"/>
         <result column="total_fee"              property="totalFee"/>
+        <result column="has_damage_waiver"      property="hasDamageWaiver"/>
+        <result column="waiver_fee"             property="waiverFee"/>
         <result column="remark"                 property="remark"/>
         <result column="create_time"            property="createTime"/>
         <result column="update_time"            property="updateTime"/>
@@ -22,7 +24,7 @@
     <sql id="Base_Column_List">
         id, order_no, user_id, gear_id, rental_days, rent_out_time,
         expected_return_time, actual_return_time, order_status, total_fee,
-        remark, create_time, update_time
+        has_damage_waiver, waiver_fee, remark, create_time, update_time
     </sql>
 
     <!-- 多条件复合分页查询 -->

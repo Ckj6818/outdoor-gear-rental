@@ -54,9 +54,9 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         Long userId = SecurityUtils.getCurrentUserId();
         validateCreateRequest(dto);
 
-        log.info("用户 [{}] 开始抢租装备 [{}]", userId, dto.getGearId());
+        log.info("用户 [{}] 开始抢租装备 [{}]，豁免金选项={}", userId, dto.getGearId(), dto.getHasDamageWaiver());
 
-        // 第一层：Redisson 分布式锁，串行化同一装备的并发下单
+        // 费用计算（基础租金 + 可选 10% 豁免金）在事务服务中完成，保证与库存扣减同事务
         return redisLockService.executeWithLock(
                 dto.getGearId(),
                 lockProperties.getWaitSeconds(),

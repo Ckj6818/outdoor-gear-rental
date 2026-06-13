@@ -23,8 +23,8 @@ public class GearInfoController {
     private final GearInfoService gearInfoService;
 
     /**
-     * 分页查询装备列表（支持名称模糊搜索、分类筛选）
-     * GET /api/gears?gearName=Osprey&category=重装背包&pageNum=1&pageSize=10
+     * 分页查询装备列表（支持 keyword / category / brand 筛选）
+     * GET /api/gears?keyword=Osprey&category=背包&brand=Osprey&pageNum=1&pageSize=12
      */
     @GetMapping
     public Result<PageResult<GearInfo>> page(GearInfoQueryDTO query) {

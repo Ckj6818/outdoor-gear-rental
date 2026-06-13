@@ -35,6 +35,9 @@ public class GearInfo {
 
     private String hoverImage;
 
+    /** 装备成色：全新 / 9成新 / 轻微使用痕迹 */
+    private String conditionGrade;
+
     /** 上架状态：0-下架，1-上架 */
     private Integer status;
 

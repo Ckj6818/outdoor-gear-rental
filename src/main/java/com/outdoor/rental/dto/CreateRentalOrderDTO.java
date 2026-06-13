@@ -14,5 +14,8 @@ public class CreateRentalOrderDTO {
     @Min(value = 1, message = "租赁天数至少为1天")
     private Integer rentalDays;
 
+    /** 是否购买意外损坏豁免金（租金 10%） */
+    private Boolean hasDamageWaiver;
+
     private String remark;
 }

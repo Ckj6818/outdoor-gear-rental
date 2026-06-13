@@ -12,6 +12,9 @@
         <result column="total_stock"      property="totalStock"/>
         <result column="available_stock"  property="availableStock"/>
         <result column="description"      property="description"/>
+        <result column="main_image"       property="mainImage"/>
+        <result column="hover_image"      property="hoverImage"/>
+        <result column="condition_grade"  property="conditionGrade"/>
         <result column="status"           property="status"/>
         <result column="create_time"      property="createTime"/>
         <result column="update_time"      property="updateTime"/>
@@ -19,7 +22,7 @@
 
     <sql id="Base_Column_List">
         id, gear_name, brand, category, daily_rent, total_stock,
-        available_stock, description, status, create_time, update_time
+        available_stock, description, main_image, hover_image, condition_grade, status, create_time, update_time
     </sql>
 
     <!-- 多条件复合分页查询 -->
@@ -28,11 +31,27 @@
         <include refid="Base_Column_List"/>
         FROM gear_info
         <where>
-            <if test="query.gearName != null and query.gearName != ''">
+            <if test="query.keyword != null and query.keyword != ''">
+                AND gear_name LIKE CONCAT('%', #{query.keyword}, '%')
+            </if>
+            <if test="(query.keyword == null or query.keyword == '') and query.gearName != null and query.gearName != ''">
                 AND gear_name LIKE CONCAT('%', #{query.gearName}, '%')
             </if>
             <if test="query.category != null and query.category != ''">
-                AND category = #{query.category}
+                <choose>
+                    <when test="query.category == '背包'">
+                        AND category LIKE '%背包%'
+                    </when>
+                    <when test="query.category == '鞋服'">
+                        AND (category LIKE '%鞋%' OR category = '徒步鞋')
+                    </when>
+                    <when test="query.category == '配件'">
+                        AND category IN ('睡袋', '炉具', '登山杖')
+                    </when>
+                    <otherwise>
+                        AND category = #{query.category}
+                    </otherwise>
+                </choose>
             </if>
             <if test="query.brand != null and query.brand != ''">
                 AND brand = #{query.brand}

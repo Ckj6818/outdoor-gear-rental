@@ -53,6 +53,7 @@ function handleClick() {
         loading="lazy"
       />
       <div v-if="!mainImageSrc" class="image-placeholder" aria-hidden="true" />
+      <span v-if="gear.conditionGrade" class="condition-badge">{{ gear.conditionGrade }}</span>
     </div>
 
     <div class="info">
@@ -111,6 +112,21 @@ function handleClick() {
     var(--color-border-light, #f0f0ee) 0%,
     var(--color-border, #e8e8e6) 100%
   );
+}
+
+.condition-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text, #222222);
+  background: rgba(247, 247, 245, 0.92);
+  line-height: 1.4;
 }
 
 .gear-card:hover .has-swap .image-main {

@@ -34,7 +34,14 @@ public class RentalOrder {
     /** 订单状态：0-待支付，1-借出中，2-已逾期，3-已归还 */
     private Integer orderStatus;
 
+    /** 订单总费用（基础租金 + 豁免金） */
     private BigDecimal totalFee;
+
+    /** 是否购买意外损坏豁免金 */
+    private Boolean hasDamageWaiver;
+
+    /** 意外损坏豁免金费用 */
+    private BigDecimal waiverFee;
 
     private String remark;
 

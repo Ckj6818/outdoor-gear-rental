@@ -52,6 +52,7 @@ CREATE TABLE gear_info (
     description         VARCHAR(500)    DEFAULT NULL COMMENT '装备描述',
     main_image          VARCHAR(512)    DEFAULT NULL COMMENT '主图 URL',
     hover_image         VARCHAR(512)    DEFAULT NULL COMMENT '悬停图 URL',
+    condition_grade     VARCHAR(20)     DEFAULT '9成新' COMMENT '装备成色：全新/9成新/轻微使用痕迹',
     status              TINYINT         NOT NULL DEFAULT 1 COMMENT '上架状态：0-下架，1-上架',
     create_time         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -76,7 +77,9 @@ CREATE TABLE rental_order (
     expected_return_time    DATETIME        DEFAULT NULL COMMENT '预计归还时间',
     actual_return_time      DATETIME        DEFAULT NULL COMMENT '实际归还时间',
     order_status            TINYINT         NOT NULL DEFAULT 0 COMMENT '订单状态：0-待支付，1-借出中，2-已逾期，3-已归还',
-    total_fee               DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '订单总费用（元）',
+    total_fee               DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '订单总费用（元，含豁免金）',
+    has_damage_waiver       TINYINT         NOT NULL DEFAULT 0 COMMENT '是否购买意外损坏豁免金：0-否，1-是',
+    waiver_fee              DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '意外损坏豁免金费用（元）',
     remark                  VARCHAR(255)    DEFAULT NULL COMMENT '备注',
     create_time             DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time             DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -117,7 +120,7 @@ INSERT INTO sys_user (username, password, role, phone, email, status) VALUES
 INSERT INTO gear_info (gear_name, brand, category, daily_rent, total_stock, available_stock, description, main_image, hover_image, status) VALUES
 -- 背包类
 ('Stratos 36L 徒步背包',       'Osprey',        '重装背包',   45.00, 8,  6,  'Osprey Stratos 36L，AirSpeed 空速背板，适合2-3日轻装徒步，含防雨罩。',           '/images/gears/1-main.jpg', '/images/gears/1-hover.jpg', 1),
-('Terraframe 65 重装背包',     'Mystery Ranch', '重装背包',   80.00, 5,  4,  'Mystery Ranch Terraframe 65，Guide Light 背负系统，适合多日重装穿越与登山。',       'https://www.mysteryranchuk.com/cdn/shop/files/Terraframe-2065-20112383_black-10_jpg.jpg?v=1723468112', 'https://www.mysteryranchuk.com/cdn/shop/files/Terraframe-2065-20112383_black-_Profile_-1040_jpg.jpg?v=1723468112', 1),
+('Terraframe 65 重装背包',     'Mystery Ranch', '重装背包',   80.00, 5,  4,  'Mystery Ranch Terraframe 65，Guide Light 背负系统，适合多日重装穿越与登山。',       '/images/gears/2-main.jpg', '/images/gears/2-hover.jpg', 1),
 ('Hikelite 26 轻量化背包',     'Osprey',        '轻量化背包', 35.00, 10, 9,  'Osprey Hikelite 26，AirSpeed 背板，自重约740g，适合一日徒步与轻装出行。',          '/images/gears/3-main.jpg', '/images/gears/3-hover.jpg', 1),
 ('Exos 58 超轻背包',           'Osprey',        '轻量化背包', 55.00, 6,  5,  'Osprey Exos 58，Frameless 超轻设计，适合长距离轻装徒步。',                          '/images/gears/4-main.jpg', '/images/gears/4-hover.jpg', 1),
 ('Radix 31 多日背包',          'Mystery Ranch', '重装背包',   60.00, 4,  3,  'Mystery Ranch Radix 31，Dynamic Flex 背负，兼顾多日徒步与单日速穿。',               '/images/gears/5-main.png', '/images/gears/5-hover.png', 1),
@@ -130,7 +133,16 @@ INSERT INTO gear_info (gear_name, brand, category, daily_rent, total_stock, avai
 ('X Ultra 4 GTX 徒步鞋',       'Salomon',       '徒步鞋',     38.00, 15, 12, 'Salomon X Ultra 4 GTX，Gore-Tex 防水，Contagrip 大底，适合中低海拔徒步与单日穿越。', '/images/gears/8-main.jpg', '/images/gears/8-hover.jpg', 1),
 ('Moab 3 GTX 中帮徒步鞋',      'Merrell',       '徒步鞋',     32.00, 12, 10, 'Merrell Moab 3 GTX，Vibram 大底，经典平底徒步鞋，舒适耐用。',                       '/images/gears/9-main.jpg', '/images/gears/9-hover.jpg', 1),
 ('Renegade GTX Mid 中帮鞋',    'Lowa',          '徒步鞋',     42.00, 8,  7,  'Lowa Renegade GTX Mid，德国工艺，DuraPU 中底，适合复杂地形徒步。',                  '/images/gears/10-main.jpg', '/images/gears/10-hover.jpg', 1),
-('Trail GTX 低帮徒步鞋',       'Hoka',          '徒步鞋',     36.00, 10, 8,  'Hoka Trail GTX 低帮款，Meta-Rocker 滚动感中底，长距离徒步脚感舒适。',               '/images/gears/11-main.jpg', '/images/gears/11-hover.jpg', 1);
+('Trail GTX 低帮徒步鞋',       'Hoka',          '徒步鞋',     36.00, 10, 8,  'Hoka Trail GTX 低帮款，Meta-Rocker 滚动感中底，长距离徒步脚感舒适。',               '/images/gears/11-main.jpg', '/images/gears/11-hover.jpg', 1),
+
+-- 扩展装备
+('Baltoro 65 重装背包',        'Gregory',       '重装背包',   68.00, 5,  4,  'Gregory Baltoro 65，Response A3 背负系统，适合多日重装徒步与登山。',              '/images/gears/12-main.jpg', '/images/gears/12-hover.jpg', 1),
+('Atmos AG 65 重装背包',       'Osprey',        '重装背包',   62.00, 6,  5,  'Osprey Atmos AG 65，Anti-Gravity 空速背板，长途徒步舒适透气。',                    '/images/gears/13-main.jpg', '/images/gears/13-hover.jpg', 1),
+('Blacktail 2 双人帐篷',       'Big Agnes',     '帐篷',       52.00, 8,  6,  'Big Agnes Blacktail 2，经典双人三季帐，快速搭建，适合徒步露营。',                  '/images/gears/14-main.jpg', '/images/gears/14-hover.jpg', 1),
+('Mistral 20 羽绒睡袋',        'Kelty',         '睡袋',       22.00, 10, 8,  'Kelty Mistral 20°F 羽绒睡袋，适合春秋三季露营与徒步露营。',                       '/images/gears/15-main.jpg', '/images/gears/15-hover.jpg', 1),
+('PocketRocket 2 炉具套装',    'MSR',           '炉具',       18.00, 15, 12, 'MSR PocketRocket 2 超轻气炉，含锅具，适合单人轻量化露营。',                        '/images/gears/16-main.jpg', '/images/gears/16-hover.jpg', 1),
+('Distance Z 碳纤维登山杖',    'Black Diamond', '登山杖',     12.00, 20, 16, 'Black Diamond Distance Z 折叠碳纤维登山杖，轻量耐用，适合长距离徒步。',              '/images/gears/17-main.jpg', '/images/gears/17-hover.jpg', 1),
+('Kestrel 48 超轻背包',        'Osprey',        '轻量化背包', 48.00, 7,  6,  'Osprey Kestrel 48，稳定背负与合理容量，适合2-3日轻装徒步。',                        '/images/gears/18-main.jpg', '/images/gears/18-hover.jpg', 1);
 
 -- ------------------------------------------------------------
 -- 租赁订单测试数据
