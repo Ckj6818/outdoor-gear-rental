@@ -1,0 +1,47 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: outdoor-gear-rental
+  config:
+    import: optional:classpath:application-local.yml
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/outdoor_gear_rental?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: ${MYSQL_PASSWORD:root}
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 3000ms
+
+# JWT 配置（secret 长度至少 32 字符，生产环境请替换为随机密钥）
+jwt:
+  secret: outdoor-gear-rental-jwt-secret-key-2025-change-in-production
+  expiration: 86400000
+
+# 分布式锁配置
+rental:
+  lock:
+    wait-seconds: 3
+    lease-seconds: 15
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.outdoor.rental.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+logging:
+  level:
+    com.outdoor.rental.mapper: debug

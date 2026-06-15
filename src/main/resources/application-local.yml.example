@@ -1,0 +1,6 @@
+# 本地 MySQL 配置（复制为 application-local.yml 并填写真实密码）
+# Spring Boot 会自动加载 application-local.yml（若存在）
+spring:
+  datasource:
+    username: root
+    password: 123456

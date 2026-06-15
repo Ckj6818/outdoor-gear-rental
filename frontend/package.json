@@ -1,0 +1,28 @@
+{
+  "name": "outdoor-gear-rental-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/vite/bin/vite.js",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview",
+    "fix-deps": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-deps.ps1",
+    "download:images": "python ./scripts/download_all_gear_images.py && python ./scripts/patch_missing_images.py"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.1",
+    "@studio-freight/lenis": "^1.0.42",
+    "axios": "1.7.7",
+    "element-plus": "2.8.4",
+    "vue": "3.5.11",
+    "vue-router": "4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "5.1.4",
+    "vite": "5.4.8"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "4.24.0"
+  }
+}

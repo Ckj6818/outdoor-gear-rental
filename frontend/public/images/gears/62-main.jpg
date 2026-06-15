@@ -1,0 +1,106 @@
+<!DOCTYPE html><!-- Last Published: Sun Jun 14 2026 16:45:43 GMT+0000 (Coordinated Universal Time) --><html data-wf-domain="www.sawyer.com" data-wf-page="65c2489c12bac2bc6b56cd1c" data-wf-site="61549f9352f35515b8a226e7" lang="en-US"><head><meta charset="utf-8"/><link href="https://cdn.prod.website-files.com" rel="preconnect" crossorigin="anonymous"/><title>Not Found</title><meta content="The page you are looking for cannot be found." name="description"/><meta content="Not Found" property="og:title"/><meta content="The page you are looking for cannot be found." property="og:description"/><meta content="Not Found" name="twitter:title"/><meta content="The page you are looking for cannot be found." name="twitter:description"/><meta property="og:type" content="website"/><meta content="summary_large_image" name="twitter:card"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="google-site-verification=1cdic8CYVdep_sVXnolI3T-yW5ZFvOGvVA8KuvrWl7k" name="google-site-verification"/><link href="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/css/sawyer-staging.shared.8a10a582b.min.css" rel="stylesheet" type="text/css" integrity="sha384-ihClgrejRtw/Q/VOEBgN+q7cvPpwxsuc16X28JAxTeyDLyi3O0Xjc+smZGJdhpux" crossorigin="anonymous"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/><script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script><script type="text/javascript">WebFont.load({  google: {    families: ["Montserrat:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic","Inconsolata:400,700","Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic"]  }});</script><script src="https://use.typekit.net/xwy4cmq.js" type="text/javascript"></script><script type="text/javascript">try{Typekit.load();}catch(e){}</script><script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script><link href="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/627bf8c684aca4e9d6baed25_general_FavIcon.jpg" rel="shortcut icon" type="image/x-icon"/><link href="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/627bf8c13ada73730a2fb8b9_general_webclip.jpg" rel="apple-touch-icon"/><link href="https://www.sawyer.com/404" rel="canonical"/><script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Page Not Found",
+  "description": "The page you are looking for cannot be found.",
+  "url": "/404"
+}
+</script><script src="https://www.google.com/recaptcha/api.js" type="text/javascript"></script><!-- head proj settings -->
+<!-- Pinterest Account Website Domain Validation -->
+<meta name="p:domain_verify" content="c8feb3c2e42af2c2e340d080d2cfacc0"/>
+
+<!-- Global Site Tag (gtag.js) - Google Analytics -->
+<script async type="fs-cc" fs-cc-categories="analytics" src="https://www.googletagmanager.com/gtag/js?id=UA-46910808-1"></script>
+<script async type="fs-cc" fs-cc-categories="analytics">
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-46910808-1',{ 'anonymize_ip': true });
+</script>
+<!-- /End Global Site Tag (gtag.js) - Google Analytics -->
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TT77K2K');</script>
+<!-- /End Google Tag Manager -->
+
+<!-- WeGlot Translation App -->
+<link rel="alternate" hreflang="en" href="https://www.sawyer.com">
+<link rel="alternate" hreflang="es" href="https://es.sawyer.com">
+<link rel="alternate" hreflang="fr" href="https://fr.sawyer.com">
+<link rel="alternate" hreflang="ht" href="https://ht.sawyer.com">
+<link rel="alternate" hreflang="ko" href="https://ko.sawyer.com">
+<link rel="alternate" hreflang="sw" href="https://sw.sawyer.com">
+<link rel="alternate" hreflang="ja" href="https://ja.sawyer.com">
+<link rel="alternate" hreflang="zh" href="https://zh.sawyer.com">
+<link rel="alternate" hreflang="pt" href="https://pt.sawyer.com">
+<link rel="alternate" hreflang="hi" href="https://hi.sawyer.com">
+<script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js"></script>
+<script>
+    Weglot.initialize({
+        api_key: 'wg_c4a2b8dd08a985528d983858a8473b2a9'
+    });
+</script>
+<!-- /End WeGlot Translation App -->
+
+
+<!-- weglot css -->
+<style>
+  .weglot-container {
+    right: 0;
+    position: relative;
+    left: 89%;
+  }
+  .dropdown-toggle.language.display-none {
+	z-index: 1000;
+  }
+</style>
+<!-- /End weglot css -->
+
+<!-- cart ada focus override -->
+<style>
+.w-commerce-commercecartcontainer {
+outline: 4px solid #007cbc !important;
+border: 4px solid #007cbc !important;
+}
+</style><script src="https://js.stripe.com/v3/" type="text/javascript" data-wf-ecomm-key="pk_live_nyPnaDuxaj8zDxRbuaPHJjip" data-wf-ecomm-acct-id="acct_1Plt9qRwhLaKuwZM"></script><script type="text/javascript">window.__WEBFLOW_CURRENCY_SETTINGS = {"currencyCode":"USD","symbol":"$","decimal":".","fractionDigits":2,"group":",","template":"{{wf {\"path\":\"symbol\",\"type\":\"PlainText\"} }} {{wf {\"path\":\"amount\",\"type\":\"CommercePrice\"} }} {{wf {\"path\":\"currencyCode\",\"type\":\"PlainText\"} }}","hideDecimalForWholeNumbers":false};</script></head><body><div class="display-none w-embed"><a id="skip-nav" class="button screenreader-text" href="#main-content">
+  Skip to main Content
+</a></div><nav id="navigation" class="absolute-nav"><div class="landing-nav"><a href="/" class="w-inline-block"><img src="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/61549f9352f355d9e0a22717_logo-primary__white.svg" loading="lazy" alt="Sawyer Products white logo vector image" class="logo"/></a></div></nav><main id="main-content" class="utility-page-wrapper"><img src="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/66fd9f5f378d26acff807f5d_Hiker-standing-above-pile-of-hiking-gear-and-food-with-Sawyer-Water-Filter.webp" loading="lazy" sizes="(max-width: 1000px) 100vw, 1000px" srcset="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/66fd9f5f378d26acff807f5d_Hiker-standing-above-pile-of-hiking-gear-and-food-with-Sawyer-Water-Filter-p-500.webp 500w, https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/66fd9f5f378d26acff807f5d_Hiker-standing-above-pile-of-hiking-gear-and-food-with-Sawyer-Water-Filter-p-800.webp 800w, https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/66fd9f5f378d26acff807f5d_Hiker-standing-above-pile-of-hiking-gear-and-food-with-Sawyer-Water-Filter.webp 1000w" alt="A pile of thru hiker gear with Sawyer water filter" class="image-cover"/><div class="overlay"></div><div class="container w-form"><div class="content-center text-color__white"><div class="overline">Error 404</div><h1>Page Not Found</h1><p class="p-large">Sorry, we couldn’t find the page you’re looking for.<br/> <br/>Please contact us if you can&#x27;t find the information on this site.<br/>We&#x27;d like to help and get the website updated if need be. </p><a href="/contact" class="button w-button">Contact Sawyer</a></div></div></main><script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=61549f9352f35515b8a226e7" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/js/sawyer-staging.schunk.172ec51a511480e2.js" type="text/javascript" integrity="sha384-qU8s0hexa7230yNvRC7SOXbAhsCCiiSAtnmgEod8Ssr0OB50VGzzWLiPDvmaspsW" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/js/sawyer-staging.schunk.eebeb0ccbfa4f2c1.js" type="text/javascript" integrity="sha384-DmXUykmyLYwXwXMoZo3pxqeqlMSjKXH7+0oRP2bAB2hBz3z0ls4HxWbxdBlW7Dw8" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/61549f9352f35515b8a226e7/js/sawyer-staging.c61e89df.b4706683fa7325c0.js" type="text/javascript" integrity="sha384-t/gY/ttnpnAIdbkrq7SrMN8mDWp82hPqV6iWkPE0fGXSWB0e3meHyxs/VkNEsY+k" crossorigin="anonymous"></script><!-- before /body proj settings -->
+
+<!-- role aria override for nav bar -->
+<script>
+const myDiv = document.querySelector('#navigation');
+myDiv.role = 'navigation';
+</script>
+
+<!-- captcha aria label override for google captcha -->
+<script async src='https://www.google.com/recaptcha/api.js?onload=onloadCallback'></script>
+<script>
+ function onloadCallback() {
+   $('#g-recaptcha-response').attr('aria-hidden', true);
+   $('#g-recaptcha-response').attr('aria-label', 'do not use');
+   $('#g-recaptcha-response').attr('aria-readonly', true);
+   $('#g-recaptcha-response-1').attr('aria-hidden', true);
+   $('#g-recaptcha-response-1').attr('aria-label', 'do not use');
+   $('#g-recaptcha-response-1').attr('aria-readonly', true);   
+ }
+</script>
+
+<!-- Google Tag Manager (noscript) 
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TT77K2K"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+-->
+<!-- End Google Tag Manager (noscript) -->
+
+<!-- Finsweet Cookie Consent -->
+<script async fs-cc-source="/cookie-components" src="https://cdn.jsdelivr.net/npm/@finsweet/cookie-consent@1/fs-cc.js" fs-cc-mode="opt-in"></script>
+
+<!-- Chatbot AI Script -->
+<script>window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}</script>
+<script async id="zsiqscript" src="https://salesiq.zohopublic.com/widget?wc=siqe5c6325ebe9204fb95ac7afee5d6f7f4f6628cfd4a9fe61485d8b2201a13c8e9" defer></script>
+<!-- /End Chatbot AI Script --></body></html>
