@@ -5,8 +5,14 @@
 
 const LOCAL = (id, type) => `/images/gears/${id}-${type}.jpg`
 
+const PLACEHOLDER = '/images/gears/placeholder.svg'
 const DEFAULT_MAIN = LOCAL(1, 'main')
 const DEFAULT_HOVER = LOCAL(1, 'hover')
+
+function pickImage(dbValue, localPath) {
+  const value = (dbValue || '').trim()
+  return value || localPath
+}
 
 /**
  * @param {object} gear
@@ -17,12 +23,12 @@ export function getGearImages(gear) {
     return { main: DEFAULT_MAIN, hover: DEFAULT_HOVER }
   }
 
-  const main = LOCAL(gear.id, 'main')
-  const hover = LOCAL(gear.id, 'hover')
+  const main = pickImage(gear.mainImage, LOCAL(gear.id, 'main'))
+  const hover = pickImage(gear.hoverImage, LOCAL(gear.id, 'hover'))
   return { main, hover }
 }
 
-/** 图片加载失败时的兜底图 */
+/** 图片加载失败时的兜底图（保证始终可显示） */
 export function getFallbackGearImage() {
-  return DEFAULT_MAIN
+  return PLACEHOLDER
 }

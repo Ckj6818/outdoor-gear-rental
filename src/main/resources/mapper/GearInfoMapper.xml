@@ -12,6 +12,8 @@
         <result column="total_stock"      property="totalStock"/>
         <result column="available_stock"  property="availableStock"/>
         <result column="description"      property="description"/>
+        <result column="specifications"   property="specifications"/>
+        <result column="usage_instructions" property="usageInstructions"/>
         <result column="main_image"       property="mainImage"/>
         <result column="hover_image"      property="hoverImage"/>
         <result column="condition_grade"  property="conditionGrade"/>
@@ -23,7 +25,7 @@
 
     <sql id="Base_Column_List">
         id, gear_name, brand, category, daily_rent, total_stock,
-        available_stock, description, main_image, hover_image, condition_grade, rent_count, status, create_time, update_time
+        available_stock, description, specifications, usage_instructions, main_image, hover_image, condition_grade, rent_count, status, create_time, update_time
     </sql>
 
     <!-- 多条件复合分页查询 -->

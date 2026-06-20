@@ -31,6 +31,12 @@ public class GearInfo {
 
     private String description;
 
+    /** 技术参数(以分号分隔) */
+    private String specifications;
+
+    /** 使用须知及注意事项 */
+    private String usageInstructions;
+
     private String mainImage;
 
     private String hoverImage;

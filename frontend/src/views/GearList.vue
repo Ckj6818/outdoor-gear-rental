@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import GearCard from '@/components/GearCard.vue'
 import { getGearPage } from '@/api/gear'
 import { createRentalOrder } from '@/api/order'
-import { getGearImages } from '@/utils/gearImages'
+import { getGearImages, getFallbackGearImage } from '@/utils/gearImages'
 
 const router = useRouter()
 const route = useRoute()
@@ -74,6 +74,10 @@ const hasActiveFilters = computed(
 )
 
 const rentDialogVisible = ref(false)
+const detailDialogVisible = ref(false)
+const detailGear = ref(null)
+const detailImageSrc = ref('')
+const detailImageFallback = ref(false)
 const rentLoading = ref(false)
 const currentGear = ref(null)
 const rentForm = reactive({
@@ -177,6 +181,44 @@ function openRentDialog(gear) {
   rentForm.remark = ''
   rentForm.hasDamageWaiver = false
   rentDialogVisible.value = true
+}
+
+function openDetailDialog(gear) {
+  detailGear.value = gear
+  detailImageFallback.value = false
+  detailImageSrc.value = getGearImages(gear).main
+  detailDialogVisible.value = true
+}
+
+function handleDetailImageError() {
+  if (!detailImageFallback.value) {
+    detailImageFallback.value = true
+    detailImageSrc.value = getFallbackGearImage()
+  }
+}
+
+function parseSpecifications(specs) {
+  if (!specs) return []
+  return specs
+    .split(';')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const colonIndex = item.indexOf(':')
+      if (colonIndex === -1) {
+        return { label: item, value: '' }
+      }
+      return {
+        label: item.slice(0, colonIndex).trim(),
+        value: item.slice(colonIndex + 1).trim()
+      }
+    })
+}
+
+function rentFromDetail() {
+  if (!detailGear.value) return
+  detailDialogVisible.value = false
+  openRentDialog(detailGear.value)
 }
 
 async function submitRent() {
@@ -317,7 +359,7 @@ onUnmounted(() => {
             :gear="gear"
             :main-image="getGearImages(gear).main"
             :hover-image="getGearImages(gear).hover"
-            @click="openRentDialog"
+            @click="openDetailDialog"
           />
         </div>
       </div>
@@ -386,6 +428,83 @@ onUnmounted(() => {
       <template #footer>
         <el-button link @click="rentDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="rentLoading" @click="submitRent">确认下单</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="装备详情"
+      width="650px"
+      destroy-on-close
+      class="detail-dialog"
+    >
+      <div v-if="detailGear" class="detail-body">
+        <div class="detail-media">
+          <img
+            class="detail-image"
+            :src="detailImageSrc"
+            :alt="detailGear.gearName"
+            @error="handleDetailImageError"
+          />
+        </div>
+        <div class="detail-info">
+          <p class="detail-brand">{{ detailGear.brand }}</p>
+          <h3 class="detail-name">{{ detailGear.gearName }}</h3>
+          <div class="detail-tags">
+            <el-tag v-if="detailGear.category" type="info" effect="plain">
+              {{ detailGear.category }}
+            </el-tag>
+            <el-tag v-if="detailGear.conditionGrade" effect="plain">
+              {{ detailGear.conditionGrade }}
+            </el-tag>
+            <el-tag
+              :type="detailGear.availableStock > 0 ? 'success' : 'danger'"
+              effect="plain"
+            >
+              {{ detailGear.availableStock > 0 ? `可租 ${detailGear.availableStock} 件` : '暂无库存' }}
+            </el-tag>
+          </div>
+          <p class="detail-desc">
+            {{ detailGear.description || '暂无装备描述，欢迎咨询客服了解详情。' }}
+          </p>
+
+          <section v-if="detailGear.specifications" class="detail-specs">
+            <h4 class="detail-section-title">技术参数</h4>
+            <el-descriptions :column="2" size="small" border class="detail-specs__grid">
+              <el-descriptions-item
+                v-for="(item, index) in parseSpecifications(detailGear.specifications)"
+                :key="index"
+                :label="item.label"
+              >
+                {{ item.value }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </section>
+
+          <aside v-if="detailGear.usageInstructions" class="detail-usage">
+            <div class="detail-usage__header">
+              <el-icon class="detail-usage__icon"><InfoFilled /></el-icon>
+              <span class="detail-usage__title">使用须知</span>
+            </div>
+            <p class="detail-usage__text">{{ detailGear.usageInstructions }}</p>
+          </aside>
+
+          <div class="detail-price">
+            <span class="detail-price__value">¥ {{ Number(detailGear.dailyRent).toFixed(2) }}</span>
+            <span class="detail-price__unit">/ 天</span>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button
+          type="primary"
+          :disabled="!detailGear || detailGear.availableStock <= 0"
+          @click="rentFromDetail"
+        >
+          立即租赁
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -699,6 +818,159 @@ onUnmounted(() => {
   font-weight: 400;
   letter-spacing: var(--letter-spacing-base);
   color: var(--color-text);
+}
+
+.detail-body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.detail-media {
+  flex: 0 0 280px;
+  width: 280px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--color-border-light);
+}
+
+.detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.detail-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-brand {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.detail-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-text);
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-desc {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.detail-section-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.detail-specs {
+  margin-top: 20px;
+}
+
+.detail-specs__grid {
+  --el-descriptions-item-bordered-label-background: var(--color-border-light, #f7f7f5);
+}
+
+.detail-specs__grid :deep(.el-descriptions__label) {
+  width: 88px;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.detail-specs__grid :deep(.el-descriptions__content) {
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.detail-usage {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-border-light, #f7f7f5);
+}
+
+.detail-usage__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.detail-usage__icon {
+  font-size: 14px;
+  color: var(--color-text-subtle);
+}
+
+.detail-usage__title {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--color-text-subtle);
+}
+
+.detail-usage__text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-text-subtle);
+}
+
+.detail-price {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.detail-price__value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+}
+
+.detail-price__unit {
+  margin-left: 4px;
+  font-size: 14px;
+  color: var(--color-text-subtle);
+}
+
+.detail-dialog :deep(.el-dialog__body) {
+  padding-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .detail-body {
+    flex-direction: column;
+  }
+
+  .detail-media {
+    width: 100%;
+    flex: none;
+  }
 }
 
 @media (max-width: 1200px) {

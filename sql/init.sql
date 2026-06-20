@@ -51,6 +51,8 @@ CREATE TABLE gear_info (
     total_stock         INT             NOT NULL DEFAULT 0 COMMENT '总库存量',
     available_stock     INT             NOT NULL DEFAULT 0 COMMENT '当前可用库存',
     description         VARCHAR(500)    DEFAULT NULL COMMENT '装备描述',
+    specifications      VARCHAR(500)    DEFAULT NULL COMMENT '技术参数(以分号分隔，如：重量:1.2kg;材质:尼龙)',
+    usage_instructions  VARCHAR(500)    DEFAULT NULL COMMENT '使用须知及注意事项',
     main_image          VARCHAR(512)    DEFAULT NULL COMMENT '主图 URL',
     hover_image         VARCHAR(512)    DEFAULT NULL COMMENT '悬停图 URL',
     condition_grade     VARCHAR(20)     DEFAULT '9成新' COMMENT '装备成色：全新/9成新/轻微使用痕迹',
@@ -142,32 +144,32 @@ INSERT INTO sys_user (username, password, role, phone, email, status) VALUES
 -- ------------------------------------------------------------
 -- 装备测试数据
 -- ------------------------------------------------------------
-INSERT INTO gear_info (gear_name, brand, category, daily_rent, total_stock, available_stock, description, main_image, hover_image, status) VALUES
+INSERT INTO gear_info (gear_name, brand, category, daily_rent, total_stock, available_stock, description, specifications, usage_instructions, main_image, hover_image, status) VALUES
 -- 背包类
-('Stratos 36L 徒步背包',       'Osprey',        '重装背包',   45.00, 8,  6,  'Osprey Stratos 36L，AirSpeed 空速背板，适合2-3日轻装徒步，含防雨罩。',           '/images/gears/1-main.jpg', '/images/gears/1-hover.jpg', 1),
-('Terraframe 65 重装背包',     'Mystery Ranch', '重装背包',   80.00, 5,  4,  'Mystery Ranch Terraframe 65，Guide Light 背负系统，适合多日重装穿越与登山。',       '/images/gears/2-main.jpg', '/images/gears/2-hover.jpg', 1),
-('Hikelite 26 轻量化背包',     'Osprey',        '轻量化背包', 35.00, 10, 9,  'Osprey Hikelite 26，AirSpeed 背板，自重约740g，适合一日徒步与轻装出行。',          '/images/gears/3-main.jpg', '/images/gears/3-hover.jpg', 1),
-('Exos 58 超轻背包',           'Osprey',        '轻量化背包', 55.00, 6,  5,  'Osprey Exos 58，Frameless 超轻设计，适合长距离轻装徒步。',                          '/images/gears/4-main.jpg', '/images/gears/4-hover.jpg', 1),
-('Radix 31 多日背包',          'Mystery Ranch', '重装背包',   60.00, 4,  3,  'Mystery Ranch Radix 31，Dynamic Flex 背负，兼顾多日徒步与单日速穿。',               '/images/gears/5-main.png', '/images/gears/5-hover.png', 1),
+('Stratos 36L 徒步背包',       'Osprey',        '重装背包',   45.00, 8,  6,  'Osprey Stratos 36L，AirSpeed 空速背板，适合2-3日轻装徒步，含防雨罩。',           '重量:1.49kg;容量:36L;背负:AirSpeed空速背板', '请勿在背包内放置尖锐物品；清洗时请用湿布擦拭，不可机洗。', '/images/gears/1-main.jpg', '/images/gears/1-hover.jpg', 1),
+('Terraframe 65 重装背包',     'Mystery Ranch', '重装背包',   80.00, 5,  4,  'Mystery Ranch Terraframe 65，Guide Light 背负系统，适合多日重装穿越与登山。',       '重量:2.20kg;容量:65L;背负:Guide Light背负系统', '装载重物时请调节腰垫与肩带；长期存放请保持干燥通风，避免背板变形。', '/images/gears/2-main.jpg', '/images/gears/2-hover.jpg', 1),
+('Hikelite 26 轻量化背包',     'Osprey',        '轻量化背包', 35.00, 10, 9,  'Osprey Hikelite 26，AirSpeed 背板，自重约740g，适合一日徒步与轻装出行。',          NULL, NULL, '/images/gears/3-main.jpg', '/images/gears/3-hover.jpg', 1),
+('Exos 58 超轻背包',           'Osprey',        '轻量化背包', 55.00, 6,  5,  'Osprey Exos 58，Frameless 超轻设计，适合长距离轻装徒步。',                          NULL, NULL, '/images/gears/4-main.jpg', '/images/gears/4-hover.jpg', 1),
+('Radix 31 多日背包',          'Mystery Ranch', '重装背包',   60.00, 4,  3,  'Mystery Ranch Radix 31，Dynamic Flex 背负，兼顾多日徒步与单日速穿。',               NULL, NULL, '/images/gears/5-main.png', '/images/gears/5-hover.png', 1),
 
 -- 帐篷类
-('Hubba Hubba NX 2人帐篷',     'MSR',           '帐篷',       70.00, 6,  5,  'MSR Hubba Hubba NX 2，经典双人轻量化帐篷，三季适用，快速搭建。',                    '/images/gears/6-main-v2.png', '/images/gears/6-hover.png', 1),
-('Cloud Up 2 双人帐篷',        'Naturehike',    '帐篷',       40.00, 12, 10, '挪客 Cloud Up 2，210T 涤纶面料，适合入门露营与徒步露营。',                          '/images/gears/7-main.jpg', '/images/gears/7-hover.jpg', 1),
+('Hubba Hubba NX 2人帐篷',     'MSR',           '帐篷',       70.00, 6,  5,  'MSR Hubba Hubba NX 2，经典双人轻量化帐篷，三季适用，快速搭建。',                    '重量:1.54kg;人数:2人;季节:三季;面料:20D尼龙', '搭建前请清理地面尖锐物；收帐后请完全晾干再入库，避免产生霉味。', '/images/gears/6-main-v2.png', '/images/gears/6-hover.png', 1),
+('Cloud Up 2 双人帐篷',        'Naturehike',    '帐篷',       40.00, 12, 10, '挪客 Cloud Up 2，210T 涤纶面料，适合入门露营与徒步露营。',                          NULL, NULL, '/images/gears/7-main.jpg', '/images/gears/7-hover.jpg', 1),
 
 -- 平底徒步鞋类
-('X Ultra 4 GTX 徒步鞋',       'Salomon',       '徒步鞋',     38.00, 15, 12, 'Salomon X Ultra 4 GTX，Gore-Tex 防水，Contagrip 大底，适合中低海拔徒步与单日穿越。', '/images/gears/8-main.jpg', '/images/gears/8-hover.jpg', 1),
-('Moab 3 GTX 中帮徒步鞋',      'Merrell',       '徒步鞋',     32.00, 12, 10, 'Merrell Moab 3 GTX，Vibram 大底，经典平底徒步鞋，舒适耐用。',                       '/images/gears/9-main.jpg', '/images/gears/9-hover.jpg', 1),
-('Renegade GTX Mid 中帮鞋',    'Lowa',          '徒步鞋',     42.00, 8,  7,  'Lowa Renegade GTX Mid，德国工艺，DuraPU 中底，适合复杂地形徒步。',                  '/images/gears/10-main.jpg', '/images/gears/10-hover.jpg', 1),
-('Trail GTX 低帮徒步鞋',       'Hoka',          '徒步鞋',     36.00, 10, 8,  'Hoka Trail GTX 低帮款，Meta-Rocker 滚动感中底，长距离徒步脚感舒适。',               '/images/gears/11-main.jpg', '/images/gears/11-hover.jpg', 1),
+('X Ultra 4 GTX 徒步鞋',       'Salomon',       '徒步鞋',     38.00, 15, 12, 'Salomon X Ultra 4 GTX，Gore-Tex 防水，Contagrip 大底，适合中低海拔徒步与单日穿越。', NULL, NULL, '/images/gears/8-main.jpg', '/images/gears/8-hover.jpg', 1),
+('Moab 3 GTX 中帮徒步鞋',      'Merrell',       '徒步鞋',     32.00, 12, 10, 'Merrell Moab 3 GTX，Vibram 大底，经典平底徒步鞋，舒适耐用。',                       NULL, NULL, '/images/gears/9-main.jpg', '/images/gears/9-hover.jpg', 1),
+('Renegade GTX Mid 中帮鞋',    'Lowa',          '徒步鞋',     42.00, 8,  7,  'Lowa Renegade GTX Mid，德国工艺，DuraPU 中底，适合复杂地形徒步。',                  NULL, NULL, '/images/gears/10-main.jpg', '/images/gears/10-hover.jpg', 1),
+('Trail GTX 低帮徒步鞋',       'Hoka',          '徒步鞋',     36.00, 10, 8,  'Hoka Trail GTX 低帮款，Meta-Rocker 滚动感中底，长距离徒步脚感舒适。',               NULL, NULL, '/images/gears/11-main.jpg', '/images/gears/11-hover.jpg', 1),
 
 -- 扩展装备
-('Baltoro 65 重装背包',        'Gregory',       '重装背包',   68.00, 5,  4,  'Gregory Baltoro 65，Response A3 背负系统，适合多日重装徒步与登山。',              '/images/gears/12-main.jpg', '/images/gears/12-hover.jpg', 1),
-('Atmos AG 65 重装背包',       'Osprey',        '重装背包',   62.00, 6,  5,  'Osprey Atmos AG 65，Anti-Gravity 空速背板，长途徒步舒适透气。',                    '/images/gears/13-main.jpg', '/images/gears/13-hover.jpg', 1),
-('Blacktail 2 双人帐篷',       'Big Agnes',     '帐篷',       52.00, 8,  6,  'Big Agnes Blacktail 2，经典双人三季帐，快速搭建，适合徒步露营。',                  '/images/gears/14-main.jpg', '/images/gears/14-hover.jpg', 1),
-('Mistral 20 羽绒睡袋',        'Kelty',         '睡袋',       22.00, 10, 8,  'Kelty Mistral 20°F 羽绒睡袋，适合春秋三季露营与徒步露营。',                       '/images/gears/15-main.jpg', '/images/gears/15-hover.jpg', 1),
-('PocketRocket 2 炉具套装',    'MSR',           '炉具',       18.00, 15, 12, 'MSR PocketRocket 2 超轻气炉，含锅具，适合单人轻量化露营。',                        '/images/gears/16-main.jpg', '/images/gears/16-hover.jpg', 1),
-('Distance Z 碳纤维登山杖',    'Black Diamond', '登山杖',     12.00, 20, 16, 'Black Diamond Distance Z 折叠碳纤维登山杖，轻量耐用，适合长距离徒步。',              '/images/gears/17-main.jpg', '/images/gears/17-hover.jpg', 1),
-('Kestrel 48 超轻背包',        'Osprey',        '轻量化背包', 48.00, 7,  6,  'Osprey Kestrel 48，稳定背负与合理容量，适合2-3日轻装徒步。',                        '/images/gears/18-main.jpg', '/images/gears/18-hover.jpg', 1);
+('Baltoro 65 重装背包',        'Gregory',       '重装背包',   68.00, 5,  4,  'Gregory Baltoro 65，Response A3 背负系统，适合多日重装徒步与登山。',              NULL, NULL, '/images/gears/12-main.jpg', '/images/gears/12-hover.jpg', 1),
+('Atmos AG 65 重装背包',       'Osprey',        '重装背包',   62.00, 6,  5,  'Osprey Atmos AG 65，Anti-Gravity 空速背板，长途徒步舒适透气。',                    NULL, NULL, '/images/gears/13-main.jpg', '/images/gears/13-hover.jpg', 1),
+('Blacktail 2 双人帐篷',       'Big Agnes',     '帐篷',       52.00, 8,  6,  'Big Agnes Blacktail 2，经典双人三季帐，快速搭建，适合徒步露营。',                  NULL, NULL, '/images/gears/14-main.jpg', '/images/gears/14-hover.jpg', 1),
+('Mistral 20 羽绒睡袋',        'Kelty',         '睡袋',       22.00, 10, 8,  'Kelty Mistral 20°F 羽绒睡袋，适合春秋三季露营与徒步露营。',                       NULL, NULL, '/images/gears/15-main.jpg', '/images/gears/15-hover.jpg', 1),
+('PocketRocket 2 炉具套装',    'MSR',           '炉具',       18.00, 15, 12, 'MSR PocketRocket 2 超轻气炉，含锅具，适合单人轻量化露营。',                        NULL, NULL, '/images/gears/16-main.jpg', '/images/gears/16-hover.jpg', 1),
+('Distance Z 碳纤维登山杖',    'Black Diamond', '登山杖',     12.00, 20, 16, 'Black Diamond Distance Z 折叠碳纤维登山杖，轻量耐用，适合长距离徒步。',              NULL, NULL, '/images/gears/17-main.jpg', '/images/gears/17-hover.jpg', 1),
+('Kestrel 48 超轻背包',        'Osprey',        '轻量化背包', 48.00, 7,  6,  'Osprey Kestrel 48，稳定背负与合理容量，适合2-3日轻装徒步。',                        NULL, NULL, '/images/gears/18-main.jpg', '/images/gears/18-hover.jpg', 1);
 
 -- ------------------------------------------------------------
 -- 租赁订单测试数据
