@@ -14,8 +14,8 @@ import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.GearInfoMapper;
 import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
-import com.outdoor.rental.security.SecurityUser;
 import com.outdoor.rental.security.SecurityUtils;
+import com.outdoor.rental.service.GearInfoService;
 import com.outdoor.rental.service.RedisLockService;
 import com.outdoor.rental.service.RentalOrderService;
 import com.outdoor.rental.service.RentalOrderTxService;
@@ -38,6 +38,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     private final RentalOrderMapper rentalOrderMapper;
     private final GearInfoMapper gearInfoMapper;
     private final GearItemMapper gearItemMapper;
+    private final GearInfoService gearInfoService;
     private final RedisLockService redisLockService;
     private final RentalOrderTxService rentalOrderTxService;
     private final RentalLockProperties lockProperties;
@@ -51,7 +52,6 @@ public class RentalOrderServiceImpl implements RentalOrderService {
 
     @Override
     public PageResult<RentalOrder> adminPageQuery(RentalOrderQueryDTO query) {
-        requireAdmin();
         return pageQuery(query);
     }
 
@@ -138,8 +138,6 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public RentalOrder inspectOrder(InspectOrderDTO dto) {
-        requireAdmin();
-
         if (dto.getOrderId() == null) {
             throw new BusinessException(400, "订单ID不能为空");
         }
@@ -177,6 +175,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             if (stockRows == 0) {
                 throw new BusinessException(400, "可用库存恢复失败，请联系管理员");
             }
+            gearInfoService.applyLifecycleAfterInspectionPass(order.getGearId());
             log.info("管理员质检通过订单 [{}]，装备实例 [{}] 已回库", order.getOrderNo(), gearItem.getSnCode());
         } else {
             order.setOrderStatus(ORDER_STATUS_ABNORMAL);
@@ -226,13 +225,6 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             throw new BusinessException(403, "无权操作该订单");
         }
         return order;
-    }
-
-    private void requireAdmin() {
-        SecurityUser user = SecurityUtils.getCurrentUser();
-        if (user.getRole() == null || user.getRole() != 0) {
-            throw new BusinessException(403, "仅管理员可执行质检");
-        }
     }
 
     private String appendRemark(String remark, String note) {

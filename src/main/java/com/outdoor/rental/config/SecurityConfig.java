@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -42,6 +44,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gears/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/orders/*/pay", "/api/orders/*/return").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/gears").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/gears/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/gears/**").authenticated()
+                        .requestMatchers("/api/admin/**").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

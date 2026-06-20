@@ -9,6 +9,7 @@ import com.outdoor.rental.mapper.GearInfoMapper;
 import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
 import com.outdoor.rental.service.RentalOrderTxService;
+import com.outdoor.rental.service.GearInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
     private final GearInfoMapper gearInfoMapper;
     private final GearItemMapper gearItemMapper;
     private final RentalOrderMapper rentalOrderMapper;
+    private final GearInfoService gearInfoService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -54,6 +56,7 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
         if (stockRows == 0) {
             throw new BusinessException(400, "库存不足，抢租失败");
         }
+        gearInfoService.evictPageCache();
 
         boolean hasWaiver = Boolean.TRUE.equals(dto.getHasDamageWaiver());
         BigDecimal baseRent = gearInfo.getDailyRent()

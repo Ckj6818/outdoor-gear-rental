@@ -1,6 +1,6 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import GearCard from '@/components/GearCard.vue'
 import { getGearPage } from '@/api/gear'
@@ -8,6 +8,7 @@ import { createRentalOrder } from '@/api/order'
 import { getGearImages } from '@/utils/gearImages'
 
 const router = useRouter()
+const route = useRoute()
 
 const loading = ref(false)
 const listReady = ref(false)
@@ -197,8 +198,27 @@ async function submitRent() {
 }
 
 onMounted(() => {
-  fetchGearList()
+  syncKeywordFromRoute()
+  fetchGearList({ scroll: !!queryParams.keyword.trim() })
 })
+
+watch(
+  () => route.query.keyword,
+  (keyword) => {
+    const nextKeyword = typeof keyword === 'string' ? keyword.trim() : ''
+    if (nextKeyword !== queryParams.keyword.trim()) {
+      queryParams.keyword = nextKeyword
+      resetAndFetch({ scroll: true })
+    }
+  }
+)
+
+function syncKeywordFromRoute() {
+  const keyword = route.query.keyword
+  if (typeof keyword === 'string' && keyword.trim()) {
+    queryParams.keyword = keyword.trim()
+  }
+}
 
 onUnmounted(() => {
   clearTimeout(keywordTimer)

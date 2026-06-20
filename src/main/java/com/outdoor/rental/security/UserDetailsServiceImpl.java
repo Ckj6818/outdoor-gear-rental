@@ -22,6 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
+        // 封装 GrantedAuthority：role=0 -> ROLE_ADMIN，role=1 -> ROLE_USER
         return new SecurityUser(user);
     }
 }

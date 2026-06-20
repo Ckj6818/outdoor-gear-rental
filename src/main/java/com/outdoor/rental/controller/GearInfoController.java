@@ -6,6 +6,7 @@ import com.outdoor.rental.dto.GearInfoQueryDTO;
 import com.outdoor.rental.entity.GearInfo;
 import com.outdoor.rental.service.GearInfoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +46,7 @@ public class GearInfoController {
      * POST /api/gears
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> create(@RequestBody GearInfo gearInfo) {
         gearInfoService.create(gearInfo);
         return Result.success("新增成功", null);
@@ -55,6 +57,7 @@ public class GearInfoController {
      * PUT /api/gears/{id}
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> update(@PathVariable Long id, @RequestBody GearInfo gearInfo) {
         gearInfo.setId(id);
         gearInfoService.update(gearInfo);
@@ -66,6 +69,7 @@ public class GearInfoController {
      * DELETE /api/gears/{id}
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
         gearInfoService.deleteById(id);
         return Result.success("删除成功", null);

@@ -54,6 +54,7 @@ CREATE TABLE gear_info (
     main_image          VARCHAR(512)    DEFAULT NULL COMMENT '主图 URL',
     hover_image         VARCHAR(512)    DEFAULT NULL COMMENT '悬停图 URL',
     condition_grade     VARCHAR(20)     DEFAULT '9成新' COMMENT '装备成色：全新/9成新/轻微使用痕迹',
+    rent_count          INT             NOT NULL DEFAULT 0 COMMENT '累计出借次数（质检通过后累加）',
     status              TINYINT         NOT NULL DEFAULT 1 COMMENT '上架状态：0-下架，1-上架',
     create_time         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

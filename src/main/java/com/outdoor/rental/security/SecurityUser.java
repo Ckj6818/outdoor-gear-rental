@@ -26,6 +26,10 @@ public class SecurityUser implements UserDetails {
         this.status = user.getStatus();
     }
 
+    /**
+     * 将数据库 role 映射为 Spring Security 权限：
+     * 0 -> ROLE_ADMIN（hasRole('ADMIN')），1 -> ROLE_USER
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         String authority = role != null && role == 0 ? "ROLE_ADMIN" : "ROLE_USER";

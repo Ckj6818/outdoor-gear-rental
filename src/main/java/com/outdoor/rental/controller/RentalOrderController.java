@@ -1,5 +1,6 @@
 package com.outdoor.rental.controller;
 
+import com.outdoor.rental.annotation.LogOperation;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.common.Result;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
@@ -9,6 +10,7 @@ import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.service.RentalOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +51,7 @@ public class RentalOrderController {
      * Header: Authorization: Bearer {token}
      */
     @PostMapping
+    @LogOperation("租赁下单")
     public Result<RentalOrder> createRentalOrder(@RequestBody @Valid CreateRentalOrderDTO dto) {
         RentalOrder order = rentalOrderService.createRentalOrder(dto);
         return Result.success("下单成功", order);
@@ -69,6 +72,7 @@ public class RentalOrderController {
      * PUT /api/orders/{id}/return
      */
     @PutMapping("/{id}/return")
+    @LogOperation("归还装备")
     public Result<RentalOrder> returnGear(@PathVariable Long id) {
         RentalOrder order = rentalOrderService.returnGear(id);
         return Result.success("归还成功", order);
@@ -108,6 +112,7 @@ class AdminRentalOrderController {
      * GET /api/admin/orders?orderStatus=4&pageNum=1&pageSize=10
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<PageResult<RentalOrder>> page(RentalOrderQueryDTO query) {
         return Result.success(rentalOrderService.adminPageQuery(query));
     }
@@ -117,6 +122,8 @@ class AdminRentalOrderController {
      * POST /api/admin/orders/inspect
      */
     @PostMapping("/inspect")
+    @PreAuthorize("hasRole('ADMIN')")
+    @LogOperation("管理员质检")
     public Result<RentalOrder> inspectOrder(@RequestBody @Valid InspectOrderDTO dto) {
         RentalOrder order = rentalOrderService.inspectOrder(dto);
         return Result.success("质检完成", order);

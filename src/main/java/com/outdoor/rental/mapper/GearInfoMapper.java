@@ -29,4 +29,9 @@ public interface GearInfoMapper extends BaseMapper<GearInfo> {
      * @return 受影响行数
      */
     int restoreAvailableStock(@Param("gearId") Long gearId);
+
+    /**
+     * 质检通过后累计出借次数 +1
+     */
+    int incrementRentCount(@Param("gearId") Long gearId);
 }

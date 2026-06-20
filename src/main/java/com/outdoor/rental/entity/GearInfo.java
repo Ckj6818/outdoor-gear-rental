@@ -38,6 +38,9 @@ public class GearInfo {
     /** 装备成色：全新 / 9成新 / 轻微使用痕迹 */
     private String conditionGrade;
 
+    /** 累计出借次数（质检通过后累加，用于自动折旧） */
+    private Integer rentCount;
+
     /** 上架状态：0-下架，1-上架 */
     private Integer status;
 

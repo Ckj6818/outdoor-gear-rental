@@ -15,6 +15,7 @@
         <result column="main_image"       property="mainImage"/>
         <result column="hover_image"      property="hoverImage"/>
         <result column="condition_grade"  property="conditionGrade"/>
+        <result column="rent_count"       property="rentCount"/>
         <result column="status"           property="status"/>
         <result column="create_time"      property="createTime"/>
         <result column="update_time"      property="updateTime"/>
@@ -22,7 +23,7 @@
 
     <sql id="Base_Column_List">
         id, gear_name, brand, category, daily_rent, total_stock,
-        available_stock, description, main_image, hover_image, condition_grade, status, create_time, update_time
+        available_stock, description, main_image, hover_image, condition_grade, rent_count, status, create_time, update_time
     </sql>
 
     <!-- 多条件复合分页查询 -->
@@ -84,6 +85,12 @@
         SET available_stock = available_stock + 1
         WHERE id = #{gearId}
           AND available_stock &lt; total_stock
+    </update>
+
+    <update id="incrementRentCount">
+        UPDATE gear_info
+        SET rent_count = IFNULL(rent_count, 0) + 1
+        WHERE id = #{gearId}
     </update>
 
 </mapper>

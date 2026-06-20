@@ -33,6 +33,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String username = jwtUtil.getUsername(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                if (userDetails instanceof SecurityUser securityUser && !isTokenRoleConsistent(token, securityUser)) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -42,6 +49,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    /** 校验 JWT 中的 role 与数据库用户角色一致，防止 Token 篡改 */
+    private boolean isTokenRoleConsistent(String token, SecurityUser securityUser) {
+        Integer tokenRole = jwtUtil.getRole(token);
+        Integer dbRole = securityUser.getRole();
+        return tokenRole != null && dbRole != null && tokenRole.equals(dbRole);
     }
 
     private String resolveToken(HttpServletRequest request) {

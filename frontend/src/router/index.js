@@ -24,6 +24,12 @@ const routes = [
     meta: { title: '登录' }
   },
   {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: () => import('@/views/admin/Dashboard.vue'),
+    meta: { title: '运营大屏', requiresAdmin: true }
+  },
+  {
     path: '/admin/orders',
     name: 'AdminOrderManage',
     component: () => import('@/views/admin/OrderManage.vue'),
