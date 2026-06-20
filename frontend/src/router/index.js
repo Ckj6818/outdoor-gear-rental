@@ -22,6 +22,12 @@ const routes = [
     name: 'Login',
     component: () => import('@/views/Login.vue'),
     meta: { title: '登录' }
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrderManage',
+    component: () => import('@/views/admin/OrderManage.vue'),
+    meta: { title: '订单质检', requiresAdmin: true }
   }
 ]
 
@@ -32,6 +38,17 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} - 户外装备租赁` : '户外装备租赁'
+
+  if (to.meta.requiresAdmin) {
+    const role = localStorage.getItem('role')
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return '/login'
+    }
+    if (role !== '0') {
+      return '/gears'
+    }
+  }
 })
 
 export default router

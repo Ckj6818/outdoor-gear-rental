@@ -27,14 +27,16 @@ const statusOptions = [
   { label: '待支付', value: 0 },
   { label: '借出中', value: 1 },
   { label: '已逾期', value: 2 },
-  { label: '已归还', value: 3 }
+  { label: '已归还', value: 3 },
+  { label: '待质检', value: 4 }
 ]
 
 const statusConfig = {
   0: { label: '待支付', type: 'info', rowClass: 'row-pending' },
   1: { label: '借出中', type: 'warning', rowClass: 'row-renting' },
   2: { label: '已逾期', type: 'danger', rowClass: 'row-overdue' },
-  3: { label: '已归还', type: 'success', rowClass: 'row-returned' }
+  3: { label: '已归还', type: 'success', rowClass: 'row-returned' },
+  4: { label: '待质检', type: 'warning', rowClass: 'row-inspection' }
 }
 
 function getStatusLabel(status) {
@@ -149,7 +151,7 @@ async function handleReturn(row) {
     )
     actionLoadingId.value = row.id
     await returnGear(row.id)
-    ElMessage.success('归还成功，库存已恢复')
+    ElMessage.success('归还成功，装备已进入待质检流程')
     await fetchMyOrders()
   } catch (error) {
     if (error !== 'cancel' && error?.message !== 'cancel') {
@@ -179,6 +181,7 @@ onMounted(async () => {
           <el-tag type="warning" effect="plain">借出中</el-tag>
           <el-tag type="danger" effect="dark">已逾期</el-tag>
           <el-tag type="success" effect="plain">已归还</el-tag>
+          <el-tag type="warning" effect="plain">待质检</el-tag>
         </div>
       </div>
 
@@ -281,6 +284,7 @@ onMounted(async () => {
               归还装备
             </el-button>
             <span v-if="row.orderStatus === 3" class="action-done">已完成</span>
+            <span v-if="row.orderStatus === 4" class="action-inspection">待质检</span>
           </template>
         </el-table-column>
       </el-table>
@@ -370,6 +374,12 @@ onMounted(async () => {
   font-size: 13px;
 }
 
+.action-inspection {
+  color: #e6a23c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 :deep(.row-pending) {
   background-color: #fafafa !important;
 }
@@ -388,5 +398,9 @@ onMounted(async () => {
 
 :deep(.row-returned) {
   background-color: #f0f9eb !important;
+}
+
+:deep(.row-inspection) {
+  background-color: #fdf6ec !important;
 }
 </style>

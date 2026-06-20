@@ -14,7 +14,7 @@ public class RentalOrderQueryDTO {
     /** 装备 ID */
     private Long gearId;
 
-    /** 订单状态：0-待支付，1-借出中，2-已逾期，3-已归还 */
+    /** 订单状态：0-待支付，1-借出中，2-已逾期，3-已归还，4-待质检，5-异常完结/需赔偿 */
     private Integer orderStatus;
 
     /** 当前页码，默认 1 */

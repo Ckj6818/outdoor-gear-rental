@@ -19,6 +19,7 @@ USE outdoor_gear_rental;
 -- 1. 用户表 sys_user
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS rental_order;
+DROP TABLE IF EXISTS gear_item;
 DROP TABLE IF EXISTS gear_info;
 DROP TABLE IF EXISTS sys_user;
 
@@ -65,13 +66,33 @@ CREATE TABLE gear_info (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='户外装备信息表';
 
 -- ------------------------------------------------------------
--- 3. 租赁订单表 rental_order
+-- 3. 装备实例表 gear_item（SKU/SN 级别追踪）
+-- ------------------------------------------------------------
+CREATE TABLE gear_item (
+    id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '装备实例主键ID',
+    gear_id         BIGINT          NOT NULL COMMENT '关联装备SPU ID（gear_info.id）',
+    sn_code         VARCHAR(64)     NOT NULL COMMENT '唯一序列号（如 OSP-36L-0001）',
+    status          TINYINT         NOT NULL DEFAULT 0 COMMENT '实例状态：0-在库，1-借出中，2-待质检，3-维修中，4-报废',
+    create_time     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_sn_code (sn_code),
+    KEY idx_gear_id (gear_id),
+    KEY idx_status (status),
+    CONSTRAINT fk_item_gear FOREIGN KEY (gear_id) REFERENCES gear_info (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT chk_item_status CHECK (status >= 0 AND status <= 4)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='装备实例表（SKU/SN）';
+
+-- ------------------------------------------------------------
+-- 4. 租赁订单表 rental_order
 -- ------------------------------------------------------------
 CREATE TABLE rental_order (
     id                      BIGINT          NOT NULL AUTO_INCREMENT COMMENT '订单主键ID',
     order_no                VARCHAR(32)     NOT NULL COMMENT '订单编号（业务唯一标识）',
     user_id                 BIGINT          NOT NULL COMMENT '租赁用户ID',
     gear_id                 BIGINT          NOT NULL COMMENT '租赁装备ID',
+    item_id                 BIGINT          DEFAULT NULL COMMENT '借出的装备实例ID（gear_item.id）',
     rental_days             INT             NOT NULL COMMENT '租赁天数',
     rent_out_time           DATETIME        DEFAULT NULL COMMENT '借出时间',
     expected_return_time    DATETIME        DEFAULT NULL COMMENT '预计归还时间',
@@ -87,11 +108,14 @@ CREATE TABLE rental_order (
     UNIQUE KEY uk_order_no (order_no),
     KEY idx_user_id (user_id),
     KEY idx_gear_id (gear_id),
+    KEY idx_item_id (item_id),
     KEY idx_order_status (order_status),
     KEY idx_rent_out_time (rent_out_time),
     CONSTRAINT fk_rental_user FOREIGN KEY (user_id) REFERENCES sys_user (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_rental_gear FOREIGN KEY (gear_id) REFERENCES gear_info (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_rental_item FOREIGN KEY (item_id) REFERENCES gear_item (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT chk_rental_days CHECK (rental_days > 0),
     CONSTRAINT chk_total_fee CHECK (total_fee >= 0)

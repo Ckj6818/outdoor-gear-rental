@@ -20,6 +20,7 @@ async function handleLogin() {
     localStorage.setItem('token', data.token)
     localStorage.setItem('userId', String(data.userId))
     localStorage.setItem('username', data.username)
+    localStorage.setItem('role', String(data.role ?? 1))
     ElMessage.success('登录成功')
     router.push('/gears')
   } finally {

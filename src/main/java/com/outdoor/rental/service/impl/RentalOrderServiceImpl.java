@@ -5,12 +5,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.config.RentalLockProperties;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
+import com.outdoor.rental.dto.InspectOrderDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.GearInfo;
+import com.outdoor.rental.entity.GearItem;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.GearInfoMapper;
+import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
+import com.outdoor.rental.security.SecurityUser;
 import com.outdoor.rental.security.SecurityUtils;
 import com.outdoor.rental.service.RedisLockService;
 import com.outdoor.rental.service.RentalOrderService;
@@ -27,8 +31,13 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class RentalOrderServiceImpl implements RentalOrderService {
 
+    private static final int ORDER_STATUS_RETURNED = 3;
+    private static final int ORDER_STATUS_PENDING_INSPECTION = 4;
+    private static final int ORDER_STATUS_ABNORMAL = 5;
+
     private final RentalOrderMapper rentalOrderMapper;
     private final GearInfoMapper gearInfoMapper;
+    private final GearItemMapper gearItemMapper;
     private final RedisLockService redisLockService;
     private final RentalOrderTxService rentalOrderTxService;
     private final RentalLockProperties lockProperties;
@@ -38,6 +47,12 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         Page<RentalOrder> page = new Page<>(query.getPageNum(), query.getPageSize());
         IPage<RentalOrder> result = rentalOrderMapper.selectOrderPage(page, query);
         return PageResult.of(result);
+    }
+
+    @Override
+    public PageResult<RentalOrder> adminPageQuery(RentalOrderQueryDTO query) {
+        requireAdmin();
+        return pageQuery(query);
     }
 
     @Override
@@ -98,21 +113,81 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             throw new BusinessException(400, "仅借出中或已逾期订单可归还");
         }
 
+        if (order.getItemId() == null) {
+            throw new BusinessException(400, "订单未关联装备实例，无法归还");
+        }
+
         LocalDateTime now = LocalDateTime.now();
-        order.setOrderStatus(3);
+        order.setOrderStatus(ORDER_STATUS_PENDING_INSPECTION);
         order.setActualReturnTime(now);
 
         if (order.getExpectedReturnTime() != null && now.isAfter(order.getExpectedReturnTime())) {
             order.setRemark(appendRemark(order.getRemark(), "逾期归还"));
         }
 
-        int affectedRows = gearInfoMapper.restoreAvailableStock(order.getGearId());
-        if (affectedRows == 0) {
-            throw new BusinessException(400, "库存恢复失败，请联系管理员");
+        int itemRows = gearItemMapper.markAsPendingInspection(order.getItemId());
+        if (itemRows == 0) {
+            throw new BusinessException(400, "装备实例状态异常，无法归还");
         }
 
         rentalOrderMapper.updateById(order);
-        log.info("用户 [{}] 归还订单 [{}]", userId, order.getOrderNo());
+        log.info("用户 [{}] 归还订单 [{}]，进入待质检流程", userId, order.getOrderNo());
+        return order;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RentalOrder inspectOrder(InspectOrderDTO dto) {
+        requireAdmin();
+
+        if (dto.getOrderId() == null) {
+            throw new BusinessException(400, "订单ID不能为空");
+        }
+        if (dto.getIsPassed() == null) {
+            throw new BusinessException(400, "质检结果不能为空");
+        }
+
+        RentalOrder order = getById(dto.getOrderId());
+        if (order.getOrderStatus() == null || order.getOrderStatus() != ORDER_STATUS_PENDING_INSPECTION) {
+            throw new BusinessException(400, "仅待质检订单可执行质检");
+        }
+        if (order.getItemId() == null) {
+            throw new BusinessException(400, "订单未关联装备实例，无法质检");
+        }
+
+        GearItem gearItem = gearItemMapper.selectById(order.getItemId());
+        if (gearItem == null) {
+            throw new BusinessException(400, "装备实例不存在");
+        }
+
+        GearInfo gearInfo = gearInfoMapper.selectById(order.getGearId());
+        if (gearInfo == null) {
+            throw new BusinessException(400, "关联装备不存在");
+        }
+
+        order.setRemark(appendRemark(order.getRemark(), dto.getRemark()));
+
+        if (Boolean.TRUE.equals(dto.getIsPassed())) {
+            order.setOrderStatus(ORDER_STATUS_RETURNED);
+            int itemRows = gearItemMapper.markInspectionPassed(order.getItemId());
+            if (itemRows == 0) {
+                throw new BusinessException(400, "装备实例状态异常，无法完成质检");
+            }
+            int stockRows = gearInfoMapper.restoreAvailableStock(order.getGearId());
+            if (stockRows == 0) {
+                throw new BusinessException(400, "可用库存恢复失败，请联系管理员");
+            }
+            log.info("管理员质检通过订单 [{}]，装备实例 [{}] 已回库", order.getOrderNo(), gearItem.getSnCode());
+        } else {
+            order.setOrderStatus(ORDER_STATUS_ABNORMAL);
+            int itemRows = gearItemMapper.markAsRepairing(order.getItemId());
+            if (itemRows == 0) {
+                throw new BusinessException(400, "装备实例状态异常，无法完成质检");
+            }
+            log.info("管理员质检异常订单 [{}]，装备实例 [{}] 进入维修", order.getOrderNo(), gearItem.getSnCode());
+        }
+
+        rentalOrderMapper.updateById(order);
         return order;
     }
 
@@ -151,6 +226,13 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             throw new BusinessException(403, "无权操作该订单");
         }
         return order;
+    }
+
+    private void requireAdmin() {
+        SecurityUser user = SecurityUtils.getCurrentUser();
+        if (user.getRole() == null || user.getRole() != 0) {
+            throw new BusinessException(403, "仅管理员可执行质检");
+        }
     }
 
     private String appendRemark(String remark, String note) {

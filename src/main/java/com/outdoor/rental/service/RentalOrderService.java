@@ -2,12 +2,18 @@ package com.outdoor.rental.service;
 
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
+import com.outdoor.rental.dto.InspectOrderDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
 
 public interface RentalOrderService {
 
     PageResult<RentalOrder> pageQuery(RentalOrderQueryDTO query);
+
+    /**
+     * 管理员全量订单分页查询
+     */
+    PageResult<RentalOrder> adminPageQuery(RentalOrderQueryDTO query);
 
     RentalOrder getById(Long id);
 
@@ -22,9 +28,14 @@ public interface RentalOrderService {
     RentalOrder payOrder(Long orderId);
 
     /**
-     * 归还装备：恢复库存并更新订单为已归还
+     * 归还装备：订单进入待质检，装备实例同步进入待质检（不恢复可用库存）
      */
     RentalOrder returnGear(Long orderId);
+
+    /**
+     * 管理员质检：通过则完结并恢复库存，异常则进入赔偿流程
+     */
+    RentalOrder inspectOrder(InspectOrderDTO dto);
 
     void update(RentalOrder rentalOrder);
 

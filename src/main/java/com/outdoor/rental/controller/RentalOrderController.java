@@ -3,6 +3,7 @@ package com.outdoor.rental.controller;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.common.Result;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
+import com.outdoor.rental.dto.InspectOrderDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.service.RentalOrderService;
@@ -92,5 +93,32 @@ public class RentalOrderController {
     public Result<Void> delete(@PathVariable Long id) {
         rentalOrderService.deleteById(id);
         return Result.success("删除成功", null);
+    }
+}
+
+@RestController
+@RequestMapping("/api/admin/orders")
+@RequiredArgsConstructor
+class AdminRentalOrderController {
+
+    private final RentalOrderService rentalOrderService;
+
+    /**
+     * 管理员全量订单分页查询
+     * GET /api/admin/orders?orderStatus=4&pageNum=1&pageSize=10
+     */
+    @GetMapping
+    public Result<PageResult<RentalOrder>> page(RentalOrderQueryDTO query) {
+        return Result.success(rentalOrderService.adminPageQuery(query));
+    }
+
+    /**
+     * 管理员质检闭环
+     * POST /api/admin/orders/inspect
+     */
+    @PostMapping("/inspect")
+    public Result<RentalOrder> inspectOrder(@RequestBody @Valid InspectOrderDTO dto) {
+        RentalOrder order = rentalOrderService.inspectOrder(dto);
+        return Result.success("质检完成", order);
     }
 }

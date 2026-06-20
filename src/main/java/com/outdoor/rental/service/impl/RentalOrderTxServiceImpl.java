@@ -2,9 +2,11 @@ package com.outdoor.rental.service.impl;
 
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
 import com.outdoor.rental.entity.GearInfo;
+import com.outdoor.rental.entity.GearItem;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.GearInfoMapper;
+import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
 import com.outdoor.rental.service.RentalOrderTxService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
     private static final BigDecimal WAIVER_RATE = new BigDecimal("0.10");
 
     private final GearInfoMapper gearInfoMapper;
+    private final GearItemMapper gearItemMapper;
     private final RentalOrderMapper rentalOrderMapper;
 
     @Override
@@ -37,9 +40,18 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
             throw new BusinessException(400, "装备已下架，无法租赁");
         }
 
-        // 原子扣减库存：WHERE available_stock > 0 防止超卖
-        int affectedRows = gearInfoMapper.deductAvailableStock(dto.getGearId());
-        if (affectedRows == 0) {
+        GearItem gearItem = gearItemMapper.selectOneAvailableForUpdate(dto.getGearId());
+        if (gearItem == null) {
+            throw new BusinessException(400, "抱歉，该装备目前暂无可用实例");
+        }
+
+        int rentedRows = gearItemMapper.markAsRented(gearItem.getId());
+        if (rentedRows == 0) {
+            throw new BusinessException(400, "抱歉，该装备目前暂无可用实例");
+        }
+
+        int stockRows = gearInfoMapper.deductAvailableStock(dto.getGearId());
+        if (stockRows == 0) {
             throw new BusinessException(400, "库存不足，抢租失败");
         }
 
@@ -55,6 +67,7 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
         order.setOrderNo(generateOrderNo());
         order.setUserId(userId);
         order.setGearId(dto.getGearId());
+        order.setItemId(gearItem.getId());
         order.setRentalDays(dto.getRentalDays());
         order.setTotalFee(totalFee);
         order.setHasDamageWaiver(hasWaiver);

@@ -7,6 +7,7 @@ const router = useRouter()
 
 const username = computed(() => localStorage.getItem('username') || '')
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+const isAdmin = computed(() => localStorage.getItem('role') === '0')
 
 const activeMenu = computed(() => route.path)
 
@@ -14,10 +15,23 @@ function goLogin() {
   router.push('/login')
 }
 
+function handleUserCommand(cmd) {
+  if (cmd === 'admin') {
+    goAdminOrders()
+  } else if (cmd === 'logout') {
+    logout()
+  }
+}
+
+function goAdminOrders() {
+  router.push('/admin/orders')
+}
+
 function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('userId')
   localStorage.removeItem('username')
+  localStorage.removeItem('role')
   router.push('/login')
 }
 </script>
@@ -40,8 +54,22 @@ function logout() {
       </el-menu>
       <div class="user-area">
         <template v-if="isLoggedIn">
-          <el-tag type="success" effect="plain">{{ username }}</el-tag>
-          <el-button link type="danger" @click="logout">退出</el-button>
+          <el-dropdown trigger="click" @command="handleUserCommand">
+            <span class="user-dropdown">
+              <el-tag type="success" effect="plain">{{ username }}</el-tag>
+              <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-if="isAdmin" command="admin">
+                  订单大盘 / 质检中心
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
         <el-button v-else type="primary" @click="goLogin">登录</el-button>
       </div>
@@ -90,6 +118,18 @@ function logout() {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+}
+
+.user-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.dropdown-icon {
+  color: #909399;
+  font-size: 12px;
 }
 
 .main {

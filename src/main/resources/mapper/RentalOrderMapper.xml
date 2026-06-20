@@ -8,6 +8,7 @@
         <result column="order_no"               property="orderNo"/>
         <result column="user_id"                property="userId"/>
         <result column="gear_id"                property="gearId"/>
+        <result column="item_id"                property="itemId"/>
         <result column="rental_days"            property="rentalDays"/>
         <result column="rent_out_time"          property="rentOutTime"/>
         <result column="expected_return_time"   property="expectedReturnTime"/>
@@ -22,7 +23,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, order_no, user_id, gear_id, rental_days, rent_out_time,
+        id, order_no, user_id, gear_id, item_id, rental_days, rent_out_time,
         expected_return_time, actual_return_time, order_status, total_fee,
         has_damage_waiver, waiver_fee, remark, create_time, update_time
     </sql>
