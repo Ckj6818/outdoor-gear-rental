@@ -18,6 +18,30 @@ const routes = [
     meta: { title: '我的租赁' }
   },
   {
+    path: '/reviews',
+    name: 'Reviews',
+    component: () => import('@/views/GearReviews.vue'),
+    meta: { title: '装备评测' }
+  },
+  {
+    path: '/how-to',
+    name: 'HowTo',
+    component: () => import('@/views/HowToGuides.vue'),
+    meta: { title: '户外技能' }
+  },
+  {
+    path: '/local',
+    name: 'Local',
+    component: () => import('@/views/LocalRoutes.vue'),
+    meta: { title: '周边路线' }
+  },
+  {
+    path: '/impact',
+    name: 'Impact',
+    component: () => import('@/views/Impact.vue'),
+    meta: { title: '环保倡议' }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),

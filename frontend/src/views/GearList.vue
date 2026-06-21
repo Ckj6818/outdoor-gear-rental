@@ -10,67 +10,120 @@ import { getGearImages, getFallbackGearImage } from '@/utils/gearImages'
 const router = useRouter()
 const route = useRoute()
 
+const user = computed(() => {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+  const roleRaw = localStorage.getItem('role')
+  return {
+    userId: localStorage.getItem('userId'),
+    username: localStorage.getItem('username') || '',
+    role: roleRaw === null || roleRaw === '' ? 1 : Number(roleRaw)
+  }
+})
+
+const isAdmin = computed(() => user.value?.role === 0)
+
 const loading = ref(false)
 const listReady = ref(false)
 const tableData = ref([])
-const total = ref(0)
 const gearSectionRef = ref(null)
 
 const SKELETON_COUNT = 12
 
-const categoryOptions = [
-  { label: '全部分类', value: '' },
-  { label: '背包', value: '背包' },
-  { label: '帐篷', value: '帐篷' },
-  { label: '鞋服', value: '鞋服' },
-  { label: '配件', value: '配件' },
-  { label: '电子设备', value: '电子设备' }
+const sidebarCategoryOptions = [
+  { label: '背包', value: 'backpack', match: (category) => /背包/.test(category || '') },
+  { label: '帐篷', value: 'tent', match: (category) => /帐篷/.test(category || '') },
+  { label: '鞋服', value: 'footwear', match: (category) => /鞋/.test(category || '') },
+  { label: '睡袋', value: 'sleeping', match: (category) => /睡袋/.test(category || '') },
+  { label: '炉具 / 配件', value: 'accessories', match: (category) => /炉具|登山杖|配件|电子设备/.test(category || '') }
 ]
 
-const brandOptions = [
-  { label: '全部品牌', value: '' },
-  { label: 'Osprey', value: 'Osprey' },
-  { label: 'Mystery Ranch', value: 'Mystery Ranch' },
-  { label: 'Gregory', value: 'Gregory' },
-  { label: 'Deuter', value: 'Deuter' },
-  { label: 'MSR', value: 'MSR' },
-  { label: 'Naturehike', value: 'Naturehike' },
-  { label: 'Big Agnes', value: 'Big Agnes' },
-  { label: 'NEMO', value: 'NEMO' },
-  { label: 'Salomon', value: 'Salomon' },
-  { label: 'Merrell', value: 'Merrell' },
-  { label: 'Lowa', value: 'Lowa' },
-  { label: 'Hoka', value: 'Hoka' },
-  { label: 'Kelty', value: 'Kelty' },
-  { label: 'Rab', value: 'Rab' },
-  { label: 'Black Diamond', value: 'Black Diamond' },
-  { label: 'Jetboil', value: 'Jetboil' },
-  { label: 'Ther-a-Rest', value: 'Ther-a-Rest' },
-  { label: 'Patagonia', value: 'Patagonia' },
-  { label: 'Arc\'teryx', value: 'Arc\'teryx' },
-  { label: 'Outdoor Research', value: 'Outdoor Research' },
-  { label: 'Garmin', value: 'Garmin' },
-  { label: 'GoPro', value: 'GoPro' },
-  { label: 'Petzl', value: 'Petzl' },
-  { label: 'Leki', value: 'Leki' },
-  { label: 'Platypus', value: 'Platypus' },
-  { label: 'Sawyer', value: 'Sawyer' },
-  { label: 'Sea to Summit', value: 'Sea to Summit' },
-  { label: 'Nalgene', value: 'Nalgene' }
-]
+const conditionOptions = ['全新', '9成新', '轻微使用痕迹']
+
+const selectedCategories = ref([])
+const selectedBrands = ref([])
+const selectedConditions = ref([])
+const sortBy = ref('default')
+const collapseActive = ref(['category', 'brand', 'condition'])
 
 const queryParams = reactive({
   keyword: '',
-  category: '',
-  brand: '',
   pageNum: 1,
   pageSize: 12
 })
 
-const showPagination = computed(() => total.value > queryParams.pageSize)
+const availableBrands = computed(() => {
+  const brands = new Set()
+  tableData.value.forEach((gear) => {
+    if (gear.brand) brands.add(gear.brand)
+  })
+  return [...brands].sort((a, b) => a.localeCompare(b, 'zh-CN'))
+})
+
+function gearMatchesCategory(gear, categoryValue) {
+  const option = sidebarCategoryOptions.find((item) => item.value === categoryValue)
+  return option ? option.match(gear.category) : false
+}
+
+const filteredGears = computed(() => {
+  let list = [...tableData.value]
+  const keyword = queryParams.keyword.trim().toLowerCase()
+
+  if (keyword) {
+    list = list.filter((gear) => {
+      const name = (gear.gearName || '').toLowerCase()
+      const brand = (gear.brand || '').toLowerCase()
+      const desc = (gear.description || '').toLowerCase()
+      return name.includes(keyword) || brand.includes(keyword) || desc.includes(keyword)
+    })
+  }
+
+  if (selectedCategories.value.length) {
+    list = list.filter((gear) =>
+      selectedCategories.value.some((value) => gearMatchesCategory(gear, value))
+    )
+  }
+
+  if (selectedBrands.value.length) {
+    list = list.filter((gear) => selectedBrands.value.includes(gear.brand))
+  }
+
+  if (selectedConditions.value.length) {
+    list = list.filter((gear) => selectedConditions.value.includes(gear.conditionGrade))
+  }
+
+  return list
+})
+
+const sortedGears = computed(() => {
+  const list = [...filteredGears.value]
+
+  if (sortBy.value === 'price-asc') {
+    return list.sort((a, b) => Number(a.dailyRent) - Number(b.dailyRent))
+  }
+  if (sortBy.value === 'price-desc') {
+    return list.sort((a, b) => Number(b.dailyRent) - Number(a.dailyRent))
+  }
+  return list.sort((a, b) => a.id - b.id)
+})
+
+const filteredTotal = computed(() => sortedGears.value.length)
+
+const paginatedGears = computed(() => {
+  const start = (queryParams.pageNum - 1) * queryParams.pageSize
+  return sortedGears.value.slice(start, start + queryParams.pageSize)
+})
+
+const showPagination = computed(() => filteredTotal.value > queryParams.pageSize)
 
 const hasActiveFilters = computed(
-  () => !!(queryParams.keyword.trim() || queryParams.category || queryParams.brand)
+  () =>
+    !!(
+      queryParams.keyword.trim() ||
+      selectedCategories.value.length ||
+      selectedBrands.value.length ||
+      selectedConditions.value.length
+    )
 )
 
 const rentDialogVisible = ref(false)
@@ -111,15 +164,11 @@ async function fetchGearList({ scroll = false } = {}) {
   listReady.value = false
   try {
     const res = await getGearPage({
-      keyword: queryParams.keyword.trim() || undefined,
-      category: queryParams.category || undefined,
-      brand: queryParams.brand || undefined,
       status: 1,
-      pageNum: queryParams.pageNum,
-      pageSize: queryParams.pageSize
+      pageNum: 1,
+      pageSize: 100
     })
     tableData.value = res.data.records || []
-    total.value = res.data.total || 0
     await nextTick()
     listReady.value = true
     if (scroll) scrollToResults()
@@ -128,41 +177,50 @@ async function fetchGearList({ scroll = false } = {}) {
   }
 }
 
-function resetAndFetch(options = {}) {
+function resetPage() {
   queryParams.pageNum = 1
-  fetchGearList(options)
+}
+
+function onSidebarFilterChange() {
+  resetPage()
 }
 
 function onKeywordInput() {
   clearTimeout(keywordTimer)
-  keywordTimer = setTimeout(() => resetAndFetch({ scroll: true }), 380)
+  keywordTimer = setTimeout(() => {
+    resetPage()
+    if (queryParams.keyword.trim()) scrollToResults()
+  }, 380)
 }
 
 function onKeywordEnter() {
   clearTimeout(keywordTimer)
-  resetAndFetch({ scroll: true })
+  resetPage()
+  scrollToResults()
 }
 
-function onFilterChange() {
-  resetAndFetch({ scroll: true })
+function onSortChange() {
+  resetPage()
 }
 
-function clearFilters() {
+function clearAllFilters() {
   queryParams.keyword = ''
-  queryParams.category = ''
-  queryParams.brand = ''
-  resetAndFetch({ scroll: true })
+  selectedCategories.value = []
+  selectedBrands.value = []
+  selectedConditions.value = []
+  sortBy.value = 'default'
+  resetPage()
 }
 
 function handlePageChange(page) {
   queryParams.pageNum = page
-  fetchGearList({ scroll: true })
+  scrollToResults()
 }
 
 function handleSizeChange(size) {
   queryParams.pageSize = size
   queryParams.pageNum = 1
-  fetchGearList({ scroll: true })
+  scrollToResults()
 }
 
 function openRentDialog(gear) {
@@ -195,6 +253,11 @@ function handleDetailImageError() {
     detailImageFallback.value = true
     detailImageSrc.value = getFallbackGearImage()
   }
+}
+
+function handleEditGear() {
+  if (!detailGear.value) return
+  ElMessage.info(`装备编辑功能开发中：${detailGear.value.gearName}`)
 }
 
 function parseSpecifications(specs) {
@@ -244,13 +307,21 @@ onMounted(() => {
   fetchGearList({ scroll: !!queryParams.keyword.trim() })
 })
 
+watch(filteredTotal, (count) => {
+  const maxPage = Math.max(1, Math.ceil(count / queryParams.pageSize) || 1)
+  if (queryParams.pageNum > maxPage) {
+    queryParams.pageNum = maxPage
+  }
+})
+
 watch(
   () => route.query.keyword,
   (keyword) => {
     const nextKeyword = typeof keyword === 'string' ? keyword.trim() : ''
     if (nextKeyword !== queryParams.keyword.trim()) {
       queryParams.keyword = nextKeyword
-      resetAndFetch({ scroll: true })
+      resetPage()
+      if (nextKeyword) scrollToResults()
     }
   }
 )
@@ -269,113 +340,160 @@ onUnmounted(() => {
 
 <template>
   <div class="gear-list-page">
-    <header class="filter-bar">
+    <header class="page-header">
       <div class="page-heading">
-        <h1 class="page-title">装备大厅</h1>
+        <div class="page-heading__row">
+          <h1 class="page-title">装备大厅</h1>
+          <el-tag v-if="isAdmin" class="admin-mode-tag" effect="plain">管理模式</el-tag>
+        </div>
         <p class="page-subtitle">精选户外装备，随时租赁出发</p>
       </div>
 
-      <div class="filter-toolbar">
+      <div class="page-search-wrap">
         <input
           v-model="queryParams.keyword"
           class="filter-search"
           type="search"
-          placeholder="搜索装备名称"
-          aria-label="搜索装备名称"
+          placeholder="搜索装备名称、品牌..."
+          aria-label="搜索装备"
           @input="onKeywordInput"
           @keydown.enter.prevent="onKeywordEnter"
         />
-
-        <el-select
-          v-model="queryParams.category"
-          class="filter-select"
-          placeholder="分类"
-          :teleported="false"
-          @change="onFilterChange"
-        >
-          <el-option
-            v-for="item in categoryOptions"
-            :key="item.value || 'all-category'"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-
-        <el-select
-          v-model="queryParams.brand"
-          class="filter-select"
-          placeholder="品牌"
-          :teleported="false"
-          @change="onFilterChange"
-        >
-          <el-option
-            v-for="item in brandOptions"
-            :key="item.value || 'all-brand'"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-
-        <button
-          v-if="hasActiveFilters"
-          type="button"
-          class="filter-clear"
-          @click="clearFilters"
-        >
-          清除筛选
-        </button>
       </div>
     </header>
 
-    <div v-if="!loading" class="result-meta">
-      <span class="result-count">共 {{ total }} 件装备</span>
-    </div>
-
-    <section ref="gearSectionRef" class="gear-section">
-      <div v-if="loading" class="skeleton-grid" aria-busy="true" aria-label="加载中">
-        <div v-for="n in SKELETON_COUNT" :key="n" class="skeleton-item">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="image" class="skeleton-image" />
-              <el-skeleton-item variant="text" class="skeleton-line skeleton-line--brand" />
-              <el-skeleton-item variant="text" class="skeleton-line skeleton-line--name" />
-              <el-skeleton-item variant="text" class="skeleton-line skeleton-line--price" />
-            </template>
-          </el-skeleton>
+    <div class="catalog-layout">
+      <aside class="filter-sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">筛选</span>
+          <button
+            v-if="hasActiveFilters"
+            type="button"
+            class="sidebar-clear"
+            @click="clearAllFilters"
+          >
+            Clear all
+          </button>
         </div>
-      </div>
 
-      <p v-else-if="tableData.length === 0" class="empty-state">暂无符合条件的装备</p>
+        <el-collapse v-model="collapseActive" class="filter-collapse">
+          <el-collapse-item title="装备分类" name="category">
+            <el-checkbox-group
+              v-model="selectedCategories"
+              class="sidebar-checkbox-group"
+              @change="onSidebarFilterChange"
+            >
+              <el-checkbox
+                v-for="item in sidebarCategoryOptions"
+                :key="item.value"
+                :label="item.value"
+                class="sidebar-checkbox"
+              >
+                {{ item.label }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </el-collapse-item>
 
-      <div v-else class="gear-grid">
-        <div
-          v-for="(gear, index) in tableData"
-          :key="gear.id"
-          class="grid-item"
-          :class="{ 'is-visible': listReady }"
-          :style="{ animationDelay: `${index * 0.06}s` }"
-        >
-          <GearCard
-            :gear="gear"
-            :main-image="getGearImages(gear).main"
-            :hover-image="getGearImages(gear).hover"
-            @click="openDetailDialog"
+          <el-collapse-item title="品牌" name="brand">
+            <el-checkbox-group
+              v-model="selectedBrands"
+              class="sidebar-checkbox-group"
+              @change="onSidebarFilterChange"
+            >
+              <el-checkbox
+                v-for="brand in availableBrands"
+                :key="brand"
+                :label="brand"
+                class="sidebar-checkbox"
+              >
+                {{ brand }}
+              </el-checkbox>
+            </el-checkbox-group>
+            <p v-if="!availableBrands.length" class="sidebar-empty">暂无品牌数据</p>
+          </el-collapse-item>
+
+          <el-collapse-item title="成色" name="condition">
+            <el-checkbox-group
+              v-model="selectedConditions"
+              class="sidebar-checkbox-group"
+              @change="onSidebarFilterChange"
+            >
+              <el-checkbox
+                v-for="condition in conditionOptions"
+                :key="condition"
+                :label="condition"
+                class="sidebar-checkbox"
+              >
+                {{ condition }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </el-collapse-item>
+        </el-collapse>
+      </aside>
+
+      <main class="product-grid-area">
+        <div class="grid-action-bar">
+          <span class="result-count">共找到 {{ filteredTotal }} 件装备</span>
+          <el-select
+            v-model="sortBy"
+            class="sort-select"
+            placeholder="排序"
+            :teleported="false"
+            @change="onSortChange"
+          >
+            <el-option label="默认排序" value="default" />
+            <el-option label="日租金从低到高" value="price-asc" />
+            <el-option label="日租金从高到低" value="price-desc" />
+          </el-select>
+        </div>
+
+        <section ref="gearSectionRef" class="gear-section">
+          <div v-if="loading" class="skeleton-grid" aria-busy="true" aria-label="加载中">
+            <div v-for="n in SKELETON_COUNT" :key="n" class="skeleton-item">
+              <el-skeleton animated>
+                <template #template>
+                  <el-skeleton-item variant="image" class="skeleton-image" />
+                  <el-skeleton-item variant="text" class="skeleton-line skeleton-line--brand" />
+                  <el-skeleton-item variant="text" class="skeleton-line skeleton-line--name" />
+                  <el-skeleton-item variant="text" class="skeleton-line skeleton-line--price" />
+                </template>
+              </el-skeleton>
+            </div>
+          </div>
+
+          <p v-else-if="paginatedGears.length === 0" class="empty-state">暂无符合条件的装备</p>
+
+          <div v-else class="gear-grid">
+            <div
+              v-for="(gear, index) in paginatedGears"
+              :key="gear.id"
+              class="grid-item"
+              :class="{ 'is-visible': listReady }"
+              :style="{ animationDelay: `${index * 0.06}s` }"
+            >
+              <GearCard
+                :gear="gear"
+                :main-image="getGearImages(gear).main"
+                :hover-image="getGearImages(gear).hover"
+                @click="openDetailDialog"
+              />
+            </div>
+          </div>
+        </section>
+
+        <footer v-if="showPagination && !loading" class="pagination-wrap">
+          <el-pagination
+            v-model:current-page="queryParams.pageNum"
+            v-model:page-size="queryParams.pageSize"
+            :page-sizes="[12, 16, 24]"
+            :total="filteredTotal"
+            layout="total, prev, pager, next"
+            @current-change="handlePageChange"
+            @size-change="handleSizeChange"
           />
-        </div>
-      </div>
-    </section>
-
-    <footer v-if="showPagination && !loading" class="pagination-wrap">
-      <el-pagination
-        v-model:current-page="queryParams.pageNum"
-        v-model:page-size="queryParams.pageSize"
-        :page-sizes="[12, 16, 24]"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
-      />
-    </footer>
+        </footer>
+      </main>
+    </div>
 
     <el-dialog
       v-model="rentDialogVisible"
@@ -449,7 +567,12 @@ onUnmounted(() => {
         </div>
         <div class="detail-info">
           <p class="detail-brand">{{ detailGear.brand }}</p>
-          <h3 class="detail-name">{{ detailGear.gearName }}</h3>
+          <div class="detail-name-row">
+            <h3 class="detail-name">{{ detailGear.gearName }}</h3>
+            <el-tag v-if="isAdmin" class="admin-mode-tag admin-mode-tag--detail" effect="plain">
+              管理模式
+            </el-tag>
+          </div>
           <div class="detail-tags">
             <el-tag v-if="detailGear.category" type="info" effect="plain">
               {{ detailGear.category }}
@@ -498,6 +621,7 @@ onUnmounted(() => {
 
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button v-if="isAdmin" type="info" plain @click="handleEditGear">编辑装备</el-button>
         <el-button
           type="primary"
           :disabled="!detailGear || detailGear.availableStock <= 0"
@@ -520,12 +644,208 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-.filter-bar {
+.filter-bar,
+.page-header {
   margin-bottom: var(--space-lg);
+}
+
+.catalog-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.filter-sidebar {
+  flex: 0 0 260px;
+  width: 260px;
+  padding-right: 32px;
+  border-right: 1px solid var(--color-border);
+  box-sizing: border-box;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.sidebar-clear {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.sidebar-clear:hover {
+  color: var(--color-text);
+}
+
+.filter-collapse {
+  border: none;
+}
+
+.filter-collapse :deep(.el-collapse-item__header) {
+  height: auto;
+  min-height: 40px;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid var(--color-border-light);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+}
+
+.filter-collapse :deep(.el-collapse-item__wrap) {
+  border: none;
+  background: transparent;
+}
+
+.filter-collapse :deep(.el-collapse-item__content) {
+  padding: 12px 0 20px;
+}
+
+.sidebar-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-checkbox {
+  height: auto;
+  margin-right: 0;
+}
+
+.sidebar-checkbox :deep(.el-checkbox__label) {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.sidebar-checkbox :deep(.el-checkbox__inner) {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border-color: var(--color-border);
+  background: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background: var(--color-text, #222);
+  border-color: var(--color-text, #222);
+}
+
+.sidebar-checkbox :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: var(--color-text);
+}
+
+.sidebar-checkbox :deep(.el-checkbox__inner::after) {
+  border-color: #fff;
+}
+
+.sidebar-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.product-grid-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.grid-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: calc(var(--space-lg) + 4px);
+}
+
+.page-search-wrap {
+  max-width: 420px;
+}
+
+.sort-select {
+  width: 168px;
+}
+
+.sort-select :deep(.el-select__wrapper) {
+  padding: 8px 0;
+  min-height: auto;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sort-select :deep(.el-select__wrapper:hover),
+.sort-select :deep(.el-select__wrapper.is-focused) {
+  border-bottom-color: var(--color-text-muted);
+  box-shadow: none;
+}
+
+.sort-select :deep(.el-select__placeholder),
+.sort-select :deep(.el-select__selected-item) {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
 }
 
 .page-heading {
   margin-bottom: calc(var(--space-lg) + 8px);
+}
+
+.page-heading__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.page-heading__row .page-title {
+  margin-bottom: 0;
+}
+
+.admin-mode-tag {
+  --el-tag-bg-color: var(--color-border-light, #f0f0ee);
+  --el-tag-border-color: var(--color-border, #e8e8e6);
+  --el-tag-text-color: var(--color-text-muted, #6b6b6b);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.admin-mode-tag--detail {
+  flex-shrink: 0;
+}
+
+.detail-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
 .page-title {
@@ -545,17 +865,12 @@ onUnmounted(() => {
 }
 
 .filter-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 40px 56px;
-  max-width: 960px;
+  display: none;
 }
 
 .filter-search {
-  flex: 1 1 260px;
-  min-width: 220px;
-  max-width: 380px;
+  width: 100%;
+  max-width: 420px;
   padding: 12px 0;
   border: none;
   border-bottom: 1px solid var(--color-border);
@@ -622,14 +937,12 @@ onUnmounted(() => {
 }
 
 .result-meta {
-  margin-bottom: calc(var(--space-lg) + 4px);
-  min-height: 20px;
+  display: none;
 }
 
 .result-count {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.06em;
   color: var(--color-text-subtle);
 }
 
@@ -982,14 +1295,33 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
+  .catalog-layout {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .filter-sidebar {
+    flex: none;
+    width: 100%;
+    padding-right: 0;
+    padding-bottom: 24px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
   .gear-grid,
   .skeleton-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 3.5rem;
   }
 
-  .filter-toolbar {
-    gap: 28px 36px;
+  .grid-action-bar {
+    flex-wrap: wrap;
+  }
+
+  .sort-select {
+    width: 100%;
+    max-width: 220px;
   }
 }
 
@@ -1004,22 +1336,14 @@ onUnmounted(() => {
     gap: 3rem;
   }
 
-  .filter-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 24px;
-  }
-
+  .page-search-wrap,
   .filter-search {
     max-width: none;
   }
 
-  .filter-select {
+  .sort-select {
+    max-width: none;
     width: 100%;
-  }
-
-  .filter-clear {
-    align-self: flex-start;
   }
 }
 </style>

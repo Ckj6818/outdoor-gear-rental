@@ -1,48 +1,86 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 
-const globalKeyword = ref('')
+const searchOpen = ref(false)
+const searchKeyword = ref('')
+const searchInputRef = ref(null)
 
-const username = computed(() => localStorage.getItem('username') || '游客')
+const username = computed(() => localStorage.getItem('username') || '')
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
-const isAdmin = computed(() => localStorage.getItem('role') === '0')
+
+const user = computed(() => {
+  if (!isLoggedIn.value) return null
+  const roleRaw = localStorage.getItem('role')
+  return {
+    userId: localStorage.getItem('userId'),
+    username: localStorage.getItem('username') || '',
+    role: roleRaw === null || roleRaw === '' ? 1 : Number(roleRaw)
+  }
+})
+
+const isAdmin = computed(() => user.value?.role === 0)
 const isLoginPage = computed(() => route.path === '/login')
 
-const avatarText = computed(() => (username.value ? username.value.charAt(0).toUpperCase() : 'U'))
-const unreadCount = 3
+const avatarText = computed(() => {
+  const name = username.value.trim()
+  return name ? name.charAt(0).toUpperCase() : 'U'
+})
+
+const subNavItems = [
+  { label: '装备评测', en: 'GEAR', to: '/reviews' },
+  { label: '户外技能', en: 'HOW-TO', to: '/how-to' },
+  { label: '周边路线', en: 'LOCAL', to: '/local' },
+  { label: '环保倡议', en: 'IMPACT', to: '/impact' }
+]
+
+function goHome() {
+  router.push('/gears')
+}
 
 function goLogin() {
   router.push('/login')
 }
 
-function goGears() {
-  router.push('/gears')
+function goSignup() {
+  router.push('/login')
 }
 
-function handleGlobalSearch() {
-  const keyword = globalKeyword.value.trim()
+function openSearch() {
+  searchOpen.value = true
+}
+
+function closeSearch() {
+  searchOpen.value = false
+}
+
+function handleSearchSubmit() {
+  const keyword = searchKeyword.value.trim()
+  closeSearch()
   router.push({
     path: '/gears',
     query: keyword ? { keyword } : {}
   })
 }
 
+function handleSearchKeydown(event) {
+  if (event.key === 'Escape') {
+    closeSearch()
+  }
+}
+
 function handleUserCommand(cmd) {
   switch (cmd) {
-    case 'profile':
-      router.push('/gears')
-      break
     case 'orders':
       router.push('/orders')
       break
-    case 'admin':
-      router.push('/admin/dashboard')
+    case 'gear-manage':
+      router.push('/gears')
       break
-    case 'inspect':
+    case 'order-manage':
       router.push('/admin/orders')
       break
     case 'logout':
@@ -60,231 +98,502 @@ function logout() {
   localStorage.removeItem('role')
   router.push('/login')
 }
+
+watch(searchOpen, async (open) => {
+  if (open) {
+    await nextTick()
+    searchInputRef.value?.focus()
+  }
+})
+
+watch(
+  () => route.path,
+  () => {
+    if (searchOpen.value) {
+      closeSearch()
+    }
+  }
+)
 </script>
 
 <template>
-  <el-container class="layout">
-    <el-header v-if="!isLoginPage" class="header">
-      <div class="header-inner">
-        <!-- 左侧：Logo + 导航 -->
-        <div class="header-left">
-          <div class="brand" @click="goGears">
-            <span class="brand-mark">山行</span>
-            <span class="brand-sub">Outdoor Rental</span>
+  <div class="layout">
+    <header v-if="!isLoginPage" class="global-header">
+      <div class="global-header__shell">
+        <!-- 主导航行 -->
+        <div class="primary-nav">
+          <div class="header-left">
+            <button type="button" class="brand" @click="goHome">GEAR RENTAL</button>
           </div>
-          <nav class="nav-links">
-            <router-link to="/gears" class="nav-link" :class="{ active: route.path === '/gears' }">
-              装备大厅
-            </router-link>
+
+          <nav class="header-center" aria-label="主导航">
+            <router-link to="/gears" class="nav-link">装备大厅</router-link>
+            <router-link to="/orders" class="nav-link">我的订单</router-link>
           </nav>
-        </div>
 
-        <!-- 中间：全局搜索 -->
-        <div class="header-center">
-          <el-input
-            v-model="globalKeyword"
-            placeholder="搜索装备名称、品牌..."
-            clearable
-            class="global-search"
-            @keyup.enter="handleGlobalSearch"
-            @clear="handleGlobalSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
+          <div class="header-right">
+            <button
+              type="button"
+              class="search-trigger"
+              aria-label="打开搜索"
+              :aria-expanded="searchOpen"
+              @click="openSearch"
+            >
+              <el-icon :size="18"><Search /></el-icon>
+            </button>
+
+            <template v-if="isLoggedIn">
+              <el-dropdown trigger="click" @command="handleUserCommand">
+                <button type="button" class="avatar-trigger" aria-label="用户菜单">
+                  <span class="avatar-circle">{{ avatarText }}</span>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+                    <template v-if="isAdmin">
+                      <el-dropdown-item divided command="gear-manage">⚙️ 装备管理</el-dropdown-item>
+                      <el-dropdown-item command="order-manage">📦 全部订单管理</el-dropdown-item>
+                    </template>
+                    <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
-          </el-input>
+            <template v-else>
+              <button type="button" class="auth-link" @click="goLogin">Log In</button>
+              <button type="button" class="auth-link auth-link--emphasis" @click="goSignup">Sign Up</button>
+            </template>
+          </div>
         </div>
 
-        <!-- 右侧：消息 + 用户 -->
-        <div class="header-right">
-          <el-badge :value="unreadCount" :max="99" class="notice-badge">
-            <el-button circle plain class="notice-btn">
-              <el-icon><Bell /></el-icon>
-            </el-button>
-          </el-badge>
+        <!-- REI 风格二级导航 -->
+        <nav class="rei-sub-nav" aria-label="内容导航">
+          <router-link
+            v-for="item in subNavItems"
+            :key="item.en"
+            :to="item.to"
+            class="sub-nav-link"
+          >
+            <span class="sub-nav-label">{{ item.label }}</span>
+            <span class="sub-nav-en">{{ item.en }}</span>
+          </router-link>
+        </nav>
 
-          <template v-if="isLoggedIn">
-            <el-dropdown trigger="click" @command="handleUserCommand">
-              <div class="user-trigger">
-                <el-avatar :size="36" class="user-avatar">{{ avatarText }}</el-avatar>
-                <span class="user-name">{{ username }}</span>
-                <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
-              </div>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="profile">个人主页</el-dropdown-item>
-                  <el-dropdown-item command="orders">我的订单</el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="admin">运营数据大屏</el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="inspect">后台质检中心</el-dropdown-item>
-                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-          <el-button v-else type="primary" round @click="goLogin">登录</el-button>
+        <!-- 沉浸式搜索面板（绝对定位覆盖二级导航区域） -->
+        <div v-show="searchOpen" class="search-panel" role="search">
+          <button type="button" class="search-panel__close" aria-label="关闭搜索" @click="closeSearch">
+            ✕
+          </button>
+          <input
+            ref="searchInputRef"
+            v-model="searchKeyword"
+            type="search"
+            class="search-panel__input"
+            placeholder="搜索装备、户外技能或目的地路线..."
+            @keydown="handleSearchKeydown"
+            @keydown.enter.prevent="handleSearchSubmit"
+          />
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="main" :class="{ 'main--full': route.path === '/gears', 'main--login': isLoginPage }">
+    <main class="main" :class="{ 'main--full': route.path === '/gears', 'main--login': isLoginPage }">
       <router-view />
-    </el-main>
-  </el-container>
+    </main>
+  </div>
 </template>
 
 <style scoped>
 .layout {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  width: 100%;
   background: var(--color-bg, #f5f7fa);
 }
 
-.header {
+.global-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 60px;
-  padding: 0;
-  background: rgba(255, 255, 255, 0.92);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  box-sizing: border-box;
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid var(--color-border, #e8e8e6);
 }
 
-.header-inner {
+.global-header__shell {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.primary-nav {
   display: flex;
-  align-items: center;
+  flex-direction: row;
   justify-content: space-between;
-  gap: 16px;
-  height: 60px;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 24px;
+  align-items: center;
+  width: 100%;
+  height: 64px;
+  padding: 0 40px;
+  box-sizing: border-box;
 }
 
 .header-left {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 28px;
   flex-shrink: 0;
 }
 
 .brand {
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  user-select: none;
-  line-height: 1.1;
-}
-
-.brand-mark {
-  font-size: 20px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   color: #1a1a1a;
+  cursor: pointer;
+  transition: color 0.25s ease, opacity 0.25s ease;
 }
 
-.brand-sub {
-  font-size: 10px;
-  color: #909399;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-link {
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  color: #409eff;
-  background: rgba(64, 158, 255, 0.08);
+.brand:hover {
+  color: #000;
+  opacity: 0.85;
 }
 
 .header-center {
-  flex: 1;
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
-  min-width: 0;
-  max-width: 520px;
-  margin: 0 auto;
+  gap: 32px;
+  flex-shrink: 0;
 }
 
-.global-search {
+.nav-link {
+  position: relative;
+  padding: 6px 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
   width: 100%;
+  height: 1px;
+  background: #1a1a1a;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s ease;
 }
 
-.global-search :deep(.el-input__wrapper) {
-  border-radius: 20px;
-  box-shadow: 0 0 0 1px #e4e7ed inset;
+.nav-link:hover {
+  color: #1a1a1a;
+}
+
+.nav-link.router-link-active {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.nav-link.router-link-active::after {
+  transform: scaleX(1);
 }
 
 .header-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
+  justify-content: flex-end;
+  gap: 20px;
   flex-shrink: 0;
 }
 
-.notice-badge :deep(.el-badge__content) {
-  border: none;
-}
-
-.notice-btn {
-  border: none;
-  background: #f4f4f5;
-}
-
-.user-trigger {
+.search-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted, #6b6b6b);
   cursor: pointer;
-  padding: 4px 8px 4px 4px;
-  border-radius: 24px;
-  transition: background 0.2s ease;
+  flex-shrink: 0;
+  transition: color 0.25s ease, background 0.25s ease;
 }
 
-.user-trigger:hover {
-  background: #f5f7fa;
+.search-trigger:hover {
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.04);
 }
 
-.user-avatar {
-  background: linear-gradient(135deg, #409eff, #67c23a);
-  color: #fff;
+.auth-link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+.auth-link:hover {
+  color: #1a1a1a;
+}
+
+.auth-link--emphasis {
+  color: #1a1a1a;
   font-weight: 600;
 }
 
-.user-name {
-  font-size: 14px;
-  color: #303133;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.auth-link--emphasis:hover {
+  opacity: 0.72;
 }
 
-.dropdown-icon {
-  color: #909399;
-  font-size: 12px;
+.avatar-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #fafafa;
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.avatar-trigger:hover .avatar-circle {
+  opacity: 0.82;
+  transform: scale(1.03);
+}
+
+/* REI 二级导航 */
+.rei-sub-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  width: 100%;
+  padding: 12px 40px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  border-top: 1px solid var(--color-border-light, #f0f0ee);
+  scrollbar-width: none;
+}
+
+.rei-sub-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sub-nav-link {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 0 10px;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--color-text-subtle, #999);
+  transition: color 0.25s ease;
+}
+
+.sub-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-text, #222);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s ease;
+}
+
+.sub-nav-link:hover {
+  color: var(--color-text, #222);
+  text-decoration: none;
+}
+
+.sub-nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.sub-nav-link.router-link-active {
+  color: var(--color-text, #222);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sub-nav-link.router-link-active::after {
+  transform: scaleX(1);
+}
+
+.sub-nav-link.router-link-active .sub-nav-label,
+.sub-nav-link.router-link-active .sub-nav-en {
+  color: var(--color-text, #222);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.sub-nav-label,
+.sub-nav-en {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sub-nav-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: 0.04em;
+  transition: color 0.25s ease;
+}
+
+.sub-nav-en {
+  font-size: 11px;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+  transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+.sub-nav-link:hover .sub-nav-label,
+.sub-nav-link:hover .sub-nav-en {
+  color: var(--color-text, #222);
+  opacity: 1;
+}
+
+/* 沉浸式搜索面板 */
+.search-panel {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px 40px 36px;
+  background-color: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border-light, #f0f0ee);
+  border-bottom: 1px solid var(--color-border, #e8e8e6);
+  animation: search-panel-in 0.28s ease;
+}
+
+@keyframes search-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-panel__close {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-text-subtle, #999);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.search-panel__close:hover {
+  color: #1a1a1a;
+}
+
+.search-panel__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 12px 48px 14px 0;
+  border: none;
+  border-bottom: 1px solid var(--color-border, #e8e8e6);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-sans, inherit);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.25s ease;
+}
+
+.search-panel__input::placeholder {
+  color: var(--color-text-subtle, #999);
+  font-weight: 400;
+}
+
+.search-panel__input:focus {
+  border-bottom-color: #1a1a1a;
+}
+
+.search-panel__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
 }
 
 .main {
+  flex: 1;
   padding: 24px 16px;
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .main--full {
@@ -299,25 +608,69 @@ function logout() {
 }
 
 @media (max-width: 900px) {
-  .header-inner {
-    padding: 0 12px;
-    gap: 10px;
+  .rei-sub-nav {
+    justify-content: flex-start;
+    gap: 32px;
   }
 
-  .brand-sub,
-  .user-name,
-  .nav-links {
-    display: none;
+  .sub-nav-en {
+    display: inline;
+  }
+}
+
+@media (max-width: 768px) {
+  .primary-nav {
+    padding: 0 16px;
+    height: 56px;
   }
 
   .header-center {
-    max-width: none;
+    gap: 20px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+  }
+
+  .brand {
+    font-size: 11px;
+  }
+
+  .rei-sub-nav {
+    gap: 24px;
+    padding: 10px 16px;
+  }
+
+  .search-panel {
+    top: 56px;
+    padding: 24px 16px 32px;
+  }
+
+  .search-panel__close {
+    right: 16px;
+  }
+
+  .search-panel__input {
+    font-size: 16px;
+    padding-right: 40px;
   }
 }
 
 @media (max-width: 480px) {
+  .header-center {
+    gap: 14px;
+  }
+
+  .auth-link {
+    font-size: 12px;
+  }
+
   .header-right {
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .sub-nav-en {
+    display: none;
   }
 }
 </style>

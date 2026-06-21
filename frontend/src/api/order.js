@@ -20,6 +20,11 @@ export function returnGear(orderId) {
   return request.put(`/orders/${orderId}/return`)
 }
 
+/** 取消/删除订单（待支付） */
+export function cancelOrder(orderId) {
+  return request.delete(`/orders/${orderId}`)
+}
+
 /** 管理员全量订单分页查询 */
 export function getAdminOrderPage(params) {
   return request.get('/admin/orders', { params })
