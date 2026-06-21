@@ -48,6 +48,7 @@ CREATE TABLE gear_info (
     brand               VARCHAR(50)     NOT NULL COMMENT '品牌',
     category            VARCHAR(50)     NOT NULL COMMENT '装备分类（如：重装背包、帐篷、徒步鞋）',
     daily_rent          DECIMAL(10, 2)  NOT NULL COMMENT '日租金（元/天）',
+    deposit             DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '押金（元）',
     total_stock         INT             NOT NULL DEFAULT 0 COMMENT '总库存量',
     available_stock     INT             NOT NULL DEFAULT 0 COMMENT '当前可用库存',
     description         VARCHAR(500)    DEFAULT NULL COMMENT '装备描述',

@@ -15,6 +15,9 @@ target/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+node_modules/
+package-lock.json
+/package.json
 *.local
 
 # OS

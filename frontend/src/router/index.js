@@ -58,6 +58,18 @@ const routes = [
     name: 'AdminOrderManage',
     component: () => import('@/views/admin/OrderManage.vue'),
     meta: { title: '订单质检', requiresAdmin: true }
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminManage',
+    component: () => import('@/views/admin/AdminManage.vue'),
+    meta: { title: '管理员账号', requiresAdmin: true }
+  },
+  {
+    path: '/admin/gears',
+    name: 'GearManage',
+    component: () => import('@/views/admin/GearManage.vue'),
+    meta: { title: '装备管理', requiresAdmin: true }
   }
 ]
 

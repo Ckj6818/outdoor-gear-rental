@@ -78,10 +78,13 @@ function handleUserCommand(cmd) {
       router.push('/orders')
       break
     case 'gear-manage':
-      router.push('/gears')
+      router.push('/admin/gears')
       break
     case 'order-manage':
       router.push('/admin/orders')
+      break
+    case 'user-manage':
+      router.push('/admin/users')
       break
     case 'logout':
       logout()
@@ -153,6 +156,7 @@ watch(
                     <template v-if="isAdmin">
                       <el-dropdown-item divided command="gear-manage">⚙️ 装备管理</el-dropdown-item>
                       <el-dropdown-item command="order-manage">📦 全部订单管理</el-dropdown-item>
+                      <el-dropdown-item command="user-manage">👤 管理员账号</el-dropdown-item>
                     </template>
                     <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                   </el-dropdown-menu>
