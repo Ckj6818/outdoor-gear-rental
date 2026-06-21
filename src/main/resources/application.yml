@@ -32,6 +32,16 @@ rental:
     wait-seconds: 3
     lease-seconds: 15
 
+# AI 导购（OpenAI 兼容接口，支持 DeepSeek / 通义千问等）
+ai:
+  consultant:
+    enabled: true
+    api-url: https://api.deepseek.com/chat/completions
+    api-key: ${AI_API_KEY:}
+    model: deepseek-chat
+    timeout-seconds: 60
+    mock-fallback: true
+
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.outdoor.rental.entity

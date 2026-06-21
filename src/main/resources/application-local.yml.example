@@ -4,3 +4,8 @@ spring:
   datasource:
     username: root
     password: 123456
+
+# AI 导购 API Key（也可通过环境变量 AI_API_KEY 注入）
+ai:
+  consultant:
+    api-key: your-deepseek-api-key

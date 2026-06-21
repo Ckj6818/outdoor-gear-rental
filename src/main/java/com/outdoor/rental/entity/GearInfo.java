@@ -25,6 +25,8 @@ public class GearInfo {
 
     private BigDecimal dailyRent;
 
+    private BigDecimal deposit;
+
     private Integer totalStock;
 
     private Integer availableStock;

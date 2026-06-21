@@ -5,6 +5,10 @@ import com.outdoor.rental.dto.CreateRentalOrderDTO;
 import com.outdoor.rental.dto.InspectOrderDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
+import com.outdoor.rental.vo.OccupiedDateRangeVO;
+
+import java.time.LocalDate;
+import java.util.List;
 
 public interface RentalOrderService {
 
@@ -40,4 +44,19 @@ public interface RentalOrderService {
     void update(RentalOrder rentalOrder);
 
     void deleteById(Long id);
+
+    /**
+     * 查询某装备已被占用的租赁档期列表。
+     */
+    List<OccupiedDateRangeVO> listOccupiedDates(Long gearId);
+
+    /**
+     * 校验租赁档期是否可用；与已有订单档期冲突时抛出业务异常。
+     * <p>
+     * 边界规则：归还日当天不可作为下一单起租日（半开区间按「含首含尾」占用处理）。
+     * </p>
+     *
+     * @return 档期可用时返回 {@code true}
+     */
+    boolean checkDateAvailable(Long gearId, LocalDate startDate, LocalDate endDate);
 }

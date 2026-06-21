@@ -25,6 +25,11 @@ export function cancelOrder(orderId) {
   return request.delete(`/orders/${orderId}`)
 }
 
+/** 查询装备已被占用的租赁档期 */
+export function getOccupiedDates(gearId) {
+  return request.get(`/orders/occupied-dates/${gearId}`)
+}
+
 /** 管理员全量订单分页查询 */
 export function getAdminOrderPage(params) {
   return request.get('/admin/orders', { params })

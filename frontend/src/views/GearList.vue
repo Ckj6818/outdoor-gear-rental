@@ -3,8 +3,8 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import GearCard from '@/components/GearCard.vue'
+import GearBookingModal from '@/components/GearBookingModal.vue'
 import { getGearPage } from '@/api/gear'
-import { createRentalOrder } from '@/api/order'
 import { getGearImages, getFallbackGearImage } from '@/utils/gearImages'
 
 const router = useRouter()
@@ -131,27 +131,7 @@ const detailDialogVisible = ref(false)
 const detailGear = ref(null)
 const detailImageSrc = ref('')
 const detailImageFallback = ref(false)
-const rentLoading = ref(false)
 const currentGear = ref(null)
-const rentForm = reactive({
-  rentalDays: 1,
-  remark: '',
-  hasDamageWaiver: false
-})
-
-const WAIVER_RATE = 0.1
-
-const baseRentAmount = computed(() => {
-  if (!currentGear.value) return 0
-  return Number(currentGear.value.dailyRent) * rentForm.rentalDays
-})
-
-const waiverAmount = computed(() => {
-  if (!rentForm.hasDamageWaiver) return 0
-  return baseRentAmount.value * WAIVER_RATE
-})
-
-const totalOrderAmount = computed(() => baseRentAmount.value + waiverAmount.value)
 
 let keywordTimer = null
 
@@ -235,9 +215,6 @@ function openRentDialog(gear) {
     return
   }
   currentGear.value = gear
-  rentForm.rentalDays = 1
-  rentForm.remark = ''
-  rentForm.hasDamageWaiver = false
   rentDialogVisible.value = true
 }
 
@@ -284,28 +261,33 @@ function rentFromDetail() {
   openRentDialog(detailGear.value)
 }
 
-async function submitRent() {
-  if (!currentGear.value) return
-  rentLoading.value = true
-  try {
-    await createRentalOrder({
-      gearId: currentGear.value.id,
-      rentalDays: rentForm.rentalDays,
-      hasDamageWaiver: rentForm.hasDamageWaiver,
-      remark: rentForm.remark
-    })
-    ElMessage.success('下单成功！')
-    rentDialogVisible.value = false
-    fetchGearList()
-  } finally {
-    rentLoading.value = false
+onMounted(async () => {
+  syncKeywordFromRoute()
+  await fetchGearList({ scroll: !!queryParams.keyword.trim() })
+  openGearFromQuery()
+})
+
+function openGearFromQuery() {
+  const raw = route.query.gearId
+  if (!raw) return
+  const id = Number(raw)
+  if (!Number.isFinite(id)) return
+  const gear = tableData.value.find((item) => item.id === id)
+  if (gear) {
+    openDetailDialog(gear)
   }
 }
 
-onMounted(() => {
-  syncKeywordFromRoute()
-  fetchGearList({ scroll: !!queryParams.keyword.trim() })
-})
+watch(
+  () => route.query.gearId,
+  async (gearId) => {
+    if (!gearId) return
+    if (!tableData.value.length) {
+      await fetchGearList()
+    }
+    openGearFromQuery()
+  }
+)
 
 watch(filteredTotal, (count) => {
   const maxPage = Math.max(1, Math.ceil(count / queryParams.pageSize) || 1)
@@ -495,59 +477,11 @@ onUnmounted(() => {
       </main>
     </div>
 
-    <el-dialog
+    <GearBookingModal
       v-model="rentDialogVisible"
-      title="确认租赁"
-      width="460px"
-      destroy-on-close
-      class="rent-dialog"
-    >
-      <template v-if="currentGear">
-        <div class="rent-summary">
-          <p class="rent-brand">{{ currentGear.brand }}</p>
-          <h3 class="rent-name">{{ currentGear.gearName }}</h3>
-          <p v-if="currentGear.conditionGrade" class="rent-condition">
-            成色 · {{ currentGear.conditionGrade }}
-          </p>
-          <p class="rent-price">¥{{ currentGear.dailyRent }} / 天</p>
-        </div>
-
-        <el-form label-width="90px" class="rent-form">
-          <el-form-item label="租赁天数">
-            <el-input-number v-model="rentForm.rentalDays" :min="1" :max="30" />
-          </el-form-item>
-          <el-form-item label="备注">
-            <el-input v-model="rentForm.remark" type="textarea" :rows="3" placeholder="选填" />
-          </el-form-item>
-          <el-form-item label-width="0" class="waiver-item">
-            <el-checkbox v-model="rentForm.hasDamageWaiver" class="waiver-checkbox">
-              购买意外损坏豁免金（租金的 10%），免除非人为因素的轻微战损赔偿
-            </el-checkbox>
-          </el-form-item>
-          <el-form-item label="费用明细" class="fee-breakdown">
-            <div class="fee-lines">
-              <p class="fee-line">
-                <span>基础租金</span>
-                <span>¥{{ baseRentAmount.toFixed(2) }}</span>
-              </p>
-              <p v-if="rentForm.hasDamageWaiver" class="fee-line">
-                <span>意外损坏豁免金</span>
-                <span>¥{{ waiverAmount.toFixed(2) }}</span>
-              </p>
-              <p class="fee-line fee-line--total">
-                <span>订单总价</span>
-                <span class="estimate-fee">¥{{ totalOrderAmount.toFixed(2) }}</span>
-              </p>
-            </div>
-          </el-form-item>
-        </el-form>
-      </template>
-
-      <template #footer>
-        <el-button link @click="rentDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="rentLoading" @click="submitRent">确认下单</el-button>
-      </template>
-    </el-dialog>
+      :gear="currentGear"
+      @success="fetchGearList"
+    />
 
     <el-dialog
       v-model="detailDialogVisible"

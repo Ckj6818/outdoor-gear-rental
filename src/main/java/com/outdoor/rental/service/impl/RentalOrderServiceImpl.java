@@ -16,15 +16,20 @@ import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
 import com.outdoor.rental.security.SecurityUtils;
 import com.outdoor.rental.service.GearInfoService;
+import com.outdoor.rental.service.RedisGearStockService;
 import com.outdoor.rental.service.RedisLockService;
 import com.outdoor.rental.service.RentalOrderService;
 import com.outdoor.rental.service.RentalOrderTxService;
+import com.outdoor.rental.vo.OccupiedDateRangeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -40,6 +45,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     private final GearItemMapper gearItemMapper;
     private final GearInfoService gearInfoService;
     private final RedisLockService redisLockService;
+    private final RedisGearStockService redisGearStockService;
     private final RentalOrderTxService rentalOrderTxService;
     private final RentalLockProperties lockProperties;
 
@@ -71,13 +77,52 @@ public class RentalOrderServiceImpl implements RentalOrderService {
 
         log.info("用户 [{}] 开始抢租装备 [{}]，豁免金选项={}", userId, dto.getGearId(), dto.getHasDamageWaiver());
 
-        // 费用计算（基础租金 + 可选 10% 豁免金）在事务服务中完成，保证与库存扣减同事务
+        /*
+         * ========== 高并发防超卖：三层防护（由外到内） ==========
+         *
+         * 第 1 层 — 分布式锁（RedisLockService，Key = gear:rent:lock:{gearId}）
+         *   同一装备的并发下单请求在此串行化，避免大量线程同时冲击 Redis / MySQL。
+         *   锁带 waitSeconds 超时与 leaseSeconds 自动过期，finally 中仅释放本线程持有的锁，防范死锁与误释放。
+         *
+         * 第 2 层 — Redis Lua 预扣减（RedisGearStockService，Key = gear:stock:{gearId}）
+         *   在锁内以 Lua 脚本原子完成「读 available_stock → 判断 → DECRBY」，消除 check-then-act 竞态。
+         *   预扣减成功后才进入 MySQL 事务；若 DB 失败则 rollbackPreDeduct 补偿 Redis，保持一致性。
+         *
+         * 第 3 层 — MySQL 本地事务（RentalOrderTxServiceImpl）
+         *   SELECT FOR UPDATE 锁定可用装备实例 + 条件 UPDATE 扣减 available_stock，作为最终兜底。
+         */
         return redisLockService.executeWithLock(
                 dto.getGearId(),
                 lockProperties.getWaitSeconds(),
                 lockProperties.getLeaseSeconds(),
-                () -> rentalOrderTxService.createOrderInTransaction(userId, dto)
+                () -> createOrderWithRedisStockGuard(userId, dto)
         );
+    }
+
+    /**
+     * 在分布式锁临界区内：先 Redis 预扣减，再 MySQL 本地事务落库；DB 失败时回滚 Redis。
+     */
+    private RentalOrder createOrderWithRedisStockGuard(Long userId, CreateRentalOrderDTO dto) {
+        Long gearId = dto.getGearId();
+        boolean redisPreDeducted = false;
+
+        if (redisGearStockService.isAvailable()) {
+            boolean reserved = redisGearStockService.tryPreDeduct(gearId, 1);
+            if (!reserved) {
+                throw new BusinessException(400, "库存不足，抢租失败");
+            }
+            redisPreDeducted = true;
+        }
+
+        try {
+            return rentalOrderTxService.createOrderInTransaction(userId, dto);
+        } catch (Exception ex) {
+            // MySQL 事务回滚后，必须补偿 Redis 预扣减，否则 Redis 库存会低于 DB 导致后续误拒单
+            if (redisPreDeducted) {
+                redisGearStockService.rollbackPreDeduct(gearId, 1);
+            }
+            throw ex;
+        }
     }
 
     @Override
@@ -175,6 +220,8 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             if (stockRows == 0) {
                 throw new BusinessException(400, "可用库存恢复失败，请联系管理员");
             }
+            // 同步恢复 Redis 预扣减库存，保持 gear:stock:{gearId} 与 MySQL available_stock 一致
+            redisGearStockService.restoreStock(order.getGearId(), 1);
             gearInfoService.applyLifecycleAfterInspectionPass(order.getGearId());
             log.info("管理员质检通过订单 [{}]，装备实例 [{}] 已回库", order.getOrderNo(), gearItem.getSnCode());
         } else {
@@ -204,6 +251,111 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     public void deleteById(Long id) {
         getById(id);
         rentalOrderMapper.deleteById(id);
+    }
+
+    @Override
+    public List<OccupiedDateRangeVO> listOccupiedDates(Long gearId) {
+        if (gearId == null) {
+            throw new BusinessException(400, "装备ID不能为空");
+        }
+        GearInfo gearInfo = gearInfoMapper.selectById(gearId);
+        if (gearInfo == null) {
+            throw new BusinessException(404, "装备不存在");
+        }
+
+        return rentalOrderMapper.selectActiveOccupiedOrdersByGearId(gearId).stream()
+                .map(this::toOccupiedDateRange)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    public boolean checkDateAvailable(Long gearId, LocalDate startDate, LocalDate endDate) {
+        validateDateRangeParams(gearId, startDate, endDate);
+
+        List<RentalOrder> activeOrders = rentalOrderMapper.selectActiveOccupiedOrdersByGearId(gearId);
+        for (RentalOrder order : activeOrders) {
+            OccupiedDateRangeVO occupied = toOccupiedDateRange(order);
+            if (occupied == null) {
+                continue;
+            }
+            if (isOccupiedRangeOverlap(
+                    occupied.getStartDate(), occupied.getEndDate(), startDate, endDate)) {
+                log.warn("档期冲突 gearId={} 已有订单 [{}] 占用 {} ~ {}，请求 {} ~ {}",
+                        gearId, order.getOrderNo(),
+                        occupied.getStartDate(), occupied.getEndDate(), startDate, endDate);
+                throw new BusinessException(400, "该档期已被占用");
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 将有效订单转换为占用档期。起租日 = rent_out_time，归还日 = expected/actual_return_time。
+     */
+    private OccupiedDateRangeVO toOccupiedDateRange(RentalOrder order) {
+        if (order.getRentOutTime() == null) {
+            return null;
+        }
+        LocalDate startDate = order.getRentOutTime().toLocalDate();
+        LocalDate endDate = resolveOccupiedEndDate(order);
+        if (endDate.isBefore(startDate)) {
+            endDate = startDate;
+        }
+        return new OccupiedDateRangeVO(startDate, endDate);
+    }
+
+    /**
+     * 计算订单占用结束日：借出中/逾期取预计归还日；待质检装备尚未可租，结束日至少延续至今天。
+     */
+    private LocalDate resolveOccupiedEndDate(RentalOrder order) {
+        Integer status = order.getOrderStatus();
+        LocalDate today = LocalDate.now();
+
+        if (status != null && status == ORDER_STATUS_PENDING_INSPECTION) {
+            LocalDate endDate = today;
+            if (order.getActualReturnTime() != null) {
+                endDate = order.getActualReturnTime().toLocalDate();
+            } else if (order.getExpectedReturnTime() != null) {
+                endDate = order.getExpectedReturnTime().toLocalDate();
+            }
+            return endDate.isBefore(today) ? today : endDate;
+        }
+
+        if (order.getExpectedReturnTime() != null) {
+            return order.getExpectedReturnTime().toLocalDate();
+        }
+        if (order.getActualReturnTime() != null) {
+            return order.getActualReturnTime().toLocalDate();
+        }
+        return today;
+    }
+
+    /**
+     * 判断两个闭区间档期是否冲突。
+     * <p>
+     * 占用区间含起租日与归还日；归还日当天不可再起租下一单（故新单起租日 &lt;= 已有归还日时视为冲突）。
+     * </p>
+     */
+    private boolean isOccupiedRangeOverlap(LocalDate occupiedStart, LocalDate occupiedEnd,
+                                           LocalDate requestStart, LocalDate requestEnd) {
+        return !requestStart.isAfter(occupiedEnd) && !occupiedStart.isAfter(requestEnd);
+    }
+
+    private void validateDateRangeParams(Long gearId, LocalDate startDate, LocalDate endDate) {
+        if (gearId == null) {
+            throw new BusinessException(400, "装备ID不能为空");
+        }
+        if (startDate == null || endDate == null) {
+            throw new BusinessException(400, "起租日期与归还日期不能为空");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new BusinessException(400, "起租日期不能晚于归还日期");
+        }
+        GearInfo gearInfo = gearInfoMapper.selectById(gearId);
+        if (gearInfo == null) {
+            throw new BusinessException(404, "装备不存在");
+        }
     }
 
     private void validateCreateRequest(CreateRentalOrderDTO dto) {

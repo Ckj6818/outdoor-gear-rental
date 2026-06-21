@@ -8,6 +8,7 @@ import com.outdoor.rental.dto.InspectOrderDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.service.RentalOrderService;
+import com.outdoor.rental.vo.OccupiedDateRangeVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -34,6 +37,15 @@ public class RentalOrderController {
     @GetMapping
     public Result<PageResult<RentalOrder>> page(RentalOrderQueryDTO query) {
         return Result.success(rentalOrderService.pageQuery(query));
+    }
+
+    /**
+     * 查询某装备已被占用的租赁档期（供前端日历禁用已租日期）
+     * GET /api/orders/occupied-dates/{gearId}
+     */
+    @GetMapping("/occupied-dates/{gearId}")
+    public Result<List<OccupiedDateRangeVO>> listOccupiedDates(@PathVariable Long gearId) {
+        return Result.success(rentalOrderService.listOccupiedDates(gearId));
     }
 
     /**

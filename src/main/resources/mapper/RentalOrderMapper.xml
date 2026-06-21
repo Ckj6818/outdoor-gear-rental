@@ -50,4 +50,18 @@
         ORDER BY create_time DESC
     </select>
 
+    <!--
+        档期占用查询：状态 1-借出中、2-已逾期、4-待质检 的订单仍占用装备。
+        已支付后（pay）即进入借出中；待质检表示已归还但未完成质检，装备仍不可用。
+    -->
+    <select id="selectActiveOccupiedOrdersByGearId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM rental_order
+        WHERE gear_id = #{gearId}
+          AND order_status IN (1, 2, 4)
+          AND rent_out_time IS NOT NULL
+        ORDER BY rent_out_time ASC
+    </select>
+
 </mapper>

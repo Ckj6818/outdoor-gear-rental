@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AiChatBox from '@/components/AiChatBox.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -204,6 +205,8 @@ watch(
     <main class="main" :class="{ 'main--full': route.path === '/gears', 'main--login': isLoginPage }">
       <router-view />
     </main>
+
+    <AiChatBox v-if="!isLoginPage" />
   </div>
 </template>
 

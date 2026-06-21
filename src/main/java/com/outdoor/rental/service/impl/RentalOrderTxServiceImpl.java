@@ -31,6 +31,13 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
     private final RentalOrderMapper rentalOrderMapper;
     private final GearInfoService gearInfoService;
 
+    /**
+     * 在 Spring 本地事务中完成下单：锁定装备实例、扣减 MySQL 库存、写入订单。
+     * <p>
+     * 调用方（{@link RentalOrderServiceImpl}）已在分布式锁内完成 Redis Lua 预扣减；
+     * 此处 MySQL 的 {@code deductAvailableStock} 作为第三层兜底，防止 Redis 与 DB 短暂不一致时超卖。
+     * </p>
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public RentalOrder createOrderInTransaction(Long userId, CreateRentalOrderDTO dto) {
@@ -54,6 +61,7 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
 
         int stockRows = gearInfoMapper.deductAvailableStock(dto.getGearId());
         if (stockRows == 0) {
+            // Redis 已预扣但 DB 扣减失败：外层 createOrderWithRedisStockGuard 会 rollbackPreDeduct
             throw new BusinessException(400, "库存不足，抢租失败");
         }
         gearInfoService.evictPageCache();
