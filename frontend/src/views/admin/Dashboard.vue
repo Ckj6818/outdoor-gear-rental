@@ -36,7 +36,7 @@ const summaryCards = computed(() => {
       bg: 'rgba(245, 108, 108, 0.12)'
     },
     {
-      title: '总玩家数',
+      title: '总用户数',
       value: data.totalPlayers ?? '-',
       icon: 'User',
       color: '#67c23a',
