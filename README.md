@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Spring Boot 3 + Vue 3 全栈实战项目</strong><br/>
-  面向 HR / 面试官可快速体验 · 涵盖抢租、质检闭环、运营大屏与完整管理后台
+  面向 HR / 面试官可快速体验 · 涵盖抢租、档期日历、AI 导购、质检闭环与完整管理后台
 </p>
 
 <p align="center">
@@ -31,9 +31,9 @@
 
 | 项目 | 说明 |
 |------|------|
-| **是什么** | 一套完整可运行的户外装备租赁 Web 系统（用户端 + 管理后台） |
-| **解决什么问题** | 模拟真实租赁流程：选品 → 抢租 → 支付 → 归还 → 质检 → 库存恢复 |
-| **和普通 Demo 的区别** | SKU 单件追踪、Redis 防超卖、RBAC 权限、运营可视化、管理 CRUD 齐全 |
+| **是什么** | 一套完整可运行的户外装备租赁 Web 系统（用户端 + 管理后台 + AI 导购） |
+| **解决什么问题** | 模拟真实租赁流程：选品 → AI 推荐 → 档期选择 → 抢租 → 支付 → 归还 → 质检 → 库存恢复 |
+| **和普通 Demo 的区别** | SKU 单件追踪、Redis Lua 防超卖、租赁档期冲突校验、轻量级 RAG 对话导购、RBAC 权限、运营可视化 |
 | **怎么快速看** | 本地启动后 3 分钟走通主流程 → **[docs/DEMO.md](docs/DEMO.md)** |
 | **一页纸摘要** | 能力矩阵 + 页面清单 → **[docs/HR.md](docs/HR.md)** |
 
@@ -45,7 +45,7 @@
 
 **山行（Outdoor Gear Rental）** 是个人全栈实战项目，业务闭环完整、代码结构清晰，适合作为**校招 / 实习 / 全栈岗位**的作品集展示。
 
-> 浏览选品 → 高并发抢租 → 支付借出 → 归还 → 质检 → 库存恢复 / 维修 → 资产折旧 → 运营分析
+> 浏览选品 → AI 导购推荐 → 档期日历选租 → 高并发抢租 → 支付借出 → 归还 → 质检 → 库存恢复 / 维修 → 资产折旧 → 运营分析
 
 与「只按数量扣库存」的 Demo 不同，本项目实现 **SPU + SKU/SN 双层模型**：每件装备拥有唯一实例编号，借还全程可溯源。
 
@@ -53,7 +53,7 @@
 |------|------|
 | **项目类型** | 前后端分离全栈 Web 应用 |
 | **业务领域** | O2O 租赁 / 库存与资产管理 |
-| **代码规模** | 后端 40+ Java 类 · 前端 10+ 页面 · MySQL 核心表 5+ |
+| **代码规模** | 后端 50+ Java 类 · 前端 12+ 页面/组件 · MySQL 核心表 5+ |
 | **适用场景** | 作品集 · 技术面试 Live Demo · 工程能力证明 |
 
 ---
@@ -65,6 +65,8 @@
 | 模块 | 亮点 |
 |------|------|
 | **装备大厅** | 侧栏多选筛选、排序分页、卡片 hover 换图、详情弹窗 |
+| **租赁下单** | 日期区间选择器、占用档期禁用、租金 + 押金自动估算（`GearBookingModal`） |
+| **AI 导购** | 右下角悬浮对话窗，RAG 挂载实时库存，结构化推荐卡片 +「去租赁」跳转 |
 | **我的订单** | Dark Minimalism 卡片式订单页、Tab 筛选、支付/归还/取消 |
 | **内容专栏** | 装备评测 / 户外技能 / 周边路线 / 环保倡议（杂志风 UI） |
 
@@ -82,13 +84,17 @@
 ```mermaid
 sequenceDiagram
     participant U as 用户
+    participant AI as AI 导购
     participant S as 后端
     participant R as Redis
     participant D as MySQL
 
-    U->>S: 抢租下单
-    S->>R: 分布式锁防超卖
-    S->>D: 锁定 gear_item + 扣库存
+    U->>AI: 咨询「去露营租什么」
+    AI->>D: RAG 检索可租装备
+    AI-->>U: JSON 回复 + 推荐卡片
+    U->>S: 选档期 + 抢租下单
+    S->>R: 分布式锁 + Lua 预扣库存
+    S->>D: 档期校验 + 锁定 gear_item + 扣库存
     U->>S: 归还装备
     S->>D: 订单→待质检
     Note over S,D: 管理员质检 → 实例回库 + 库存恢复 + 折旧
@@ -101,7 +107,9 @@ sequenceDiagram
 | 类别 | 实现 | 价值 |
 |------|------|------|
 | **库存模型** | `gear_info` + `gear_item` SKU 追踪 | 单件装备全生命周期 |
-| **高并发抢租** | Redisson 锁 + 行锁 + 原子扣减 | 防止超卖 |
+| **高并发抢租** | Redisson 锁 + Redis Lua 预扣减 + MySQL 行锁 | 三层防护防超卖 |
+| **租赁档期** | 占用区间 API + 闭区间冲突算法 | 日历选租、归还日不可连租 |
+| **AI 导购** | 轻量级 RAG + Prompt 结构化 JSON | 对话式推荐、缩短决策链路 |
 | **缓存** | Spring Cache + Redis | 装备大厅读多写少加速 |
 | **安全** | JWT + BCrypt + RBAC | 无状态鉴权、权限隔离 |
 | **审计** | `@LogOperation` AOP | 操作人 / IP / 耗时记录 |
@@ -113,7 +121,7 @@ sequenceDiagram
 
 ### 环境
 
-JDK 17+ · Maven 3.9+ · Node.js 18+ · MySQL 8+ · Redis 6+（可选）
+JDK 17+ · Maven 3.9+ · Node.js 18+ · MySQL 8+ · Redis 6+（可选，未启动时部分能力降级）
 
 ### 1. 克隆 & 初始化
 
@@ -125,9 +133,12 @@ mysql -u root -p < sql/init.sql
 
 已有数据库时，按需执行 `sql/` 下增量脚本（如 `alter_gear_deposit.sql`）。
 
-### 2. 启动
+### 2. 配置 & 启动
 
 ```powershell
+# 复制本地配置（MySQL 密码、可选 AI Key）
+copy src\main\resources\application-local.yml.example src\main\resources\application-local.yml
+
 # 后端
 $env:MYSQL_PASSWORD = "123456"
 mvn spring-boot:run          # → http://localhost:8081
@@ -135,6 +146,10 @@ mvn spring-boot:run          # → http://localhost:8081
 # 前端
 cd frontend && npm install && npm run dev   # → http://localhost:5173
 ```
+
+**AI 导购（可选）：** 在 `application-local.yml` 或环境变量 `AI_API_KEY` 中配置 DeepSeek 等 OpenAI 兼容 API Key。未配置时自动启用 Mock 模式（基于库存关键词推荐，便于答辩演示）。
+
+> **注意：** 修改后端 Java 代码后需重启 Spring Boot，新接口才会生效。
 
 ### 3. 测试账号
 
@@ -154,9 +169,16 @@ outdoor-gear-rental/
 │   └── DEMO.md               # 3 分钟体验指南 ⭐
 ├── sql/                      # 初始化 + 增量迁移
 ├── src/main/java/            # Spring Boot 后端
+│   └── com/outdoor/rental/
+│       ├── service/RedisGearStockService.java   # Lua 库存预扣减
+│       ├── service/impl/AiConsultantServiceImpl.java  # RAG 导购
+│       └── service/impl/RentalOrderServiceImpl.java   # 档期冲突校验
 └── frontend/src/
-    ├── views/                # 用户端 + admin 管理页
-    └── api/                  # Axios 接口封装
+    ├── components/
+    │   ├── AiChatBox.vue           # AI 导购对话窗
+    │   └── GearBookingModal.vue    # 档期选择下单弹窗
+    ├── views/                      # 用户端 + admin 管理页
+    └── api/                        # Axios 接口封装
 ```
 
 ---
@@ -168,6 +190,8 @@ outdoor-gear-rental/
 | POST | `/api/auth/login` | 登录 |
 | GET | `/api/gears` | 装备列表（缓存） |
 | POST | `/api/orders` | 下单抢租 |
+| GET | `/api/orders/occupied-dates/{gearId}` | 装备已占用档期（日历禁用） |
+| POST | `/api/ai/consult` | AI 导购对话（返回 JSON 字符串） |
 | GET | `/api/admin/dashboard/stats` | 运营大屏 |
 | GET | `/api/admin/system/gear` | 装备管理 |
 | GET | `/api/admin/system/user` | 管理员管理 |
