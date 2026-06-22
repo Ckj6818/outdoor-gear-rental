@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-label="?? · ????????">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="mountain1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="mountain2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="280" fill="url(#sky)"/>
+  <polygon points="0,220 280,90 520,170 760,60 980,150 1200,80 1200,280 0,280" fill="url(#mountain1)" opacity="0.85"/>
+  <polygon points="0,250 420,140 680,210 920,120 1200,190 1200,280 0,280" fill="url(#mountain2)" opacity="0.95"/>
+  <rect x="48" y="48" width="4" height="56" rx="2" fill="url(#accent)"/>
+  <text x="68" y="82" fill="#f8fafc" font-family="Segoe UI, system-ui, sans-serif" font-size="42" font-weight="700">?? · ????????</text>
+  <text x="68" y="122" fill="#cbd5e1" font-family="Segoe UI, system-ui, sans-serif" font-size="20">Spring Boot 3 + Vue 3 · SKU ?? · ?? · AI ?? · ????</text>
+  <g transform="translate(68, 150)">
+    <rect x="0" y="0" width="118" height="34" rx="17" fill="#22c55e" opacity="0.18"/>
+    <text x="16" y="22" fill="#86efac" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600">????</text>
+    <rect x="132" y="0" width="132" height="34" rx="17" fill="#38bdf8" opacity="0.18"/>
+    <text x="148" y="22" fill="#7dd3fc" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600">3 ????</text>
+    <rect x="278" y="0" width="148" height="34" rx="17" fill="#a78bfa" opacity="0.18"/>
+    <text x="294" y="22" fill="#c4b5fd" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600">????? Demo</text>
+  </g>
+  <circle cx="1080" cy="72" r="36" fill="#22c55e" opacity="0.12"/>
+  <path d="M1068 72 L1080 58 L1092 72 L1080 86 Z" fill="#86efac" opacity="0.9"/>
+</svg>
