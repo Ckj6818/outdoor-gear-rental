@@ -2,6 +2,9 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { createRentalOrder, getOccupiedDates } from '@/api/order'
+import { zhCn } from '@/locale'
+
+const locale = zhCn
 
 const props = defineProps({
   modelValue: {
@@ -216,6 +219,7 @@ watch(
     destroy-on-close
     class="gear-booking-modal"
   >
+    <el-config-provider :locale="locale">
     <template v-if="gear">
       <div class="booking-summary">
         <p class="booking-summary__brand">{{ gear.brand }}</p>
@@ -296,6 +300,7 @@ watch(
         </el-form-item>
       </el-form>
     </template>
+    </el-config-provider>
 
     <template #footer>
       <el-button link @click="visible = false">取消</el-button>

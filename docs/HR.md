@@ -13,7 +13,7 @@
 
 **用户选装备 → AI 导购推荐 → 档期日历选租 → 下单抢租 → 支付借出 → 归还 → 后台质检 → 库存恢复**
 
-不是简单的 CRUD Demo，而是包含 **SKU 单件追踪、Redis Lua 防超卖、租赁档期冲突校验、轻量级 RAG 对话导购、JWT 权限、运营大屏** 等工程化能力。
+不是简单的 CRUD Demo，而是包含 **SKU 单件追踪、Redis Lua 防超卖、租赁档期冲突校验、轻量级 RAG 对话导购、Sa-Token 权限、运营大屏** 等工程化能力。
 
 ---
 
@@ -27,9 +27,9 @@
 | **业务建模** | 租赁档期占用区间查询、闭区间冲突算法（归还日不可连租） |
 | **AI 应用** | 轻量级 RAG（动态挂载可租库存）+ Prompt 约束结构化 JSON + 前端推荐卡片渲染 |
 | **工程化思维** | Redis 缓存、AOP 操作日志、统一异常与返回体、配置化 AI Key |
-| **安全意识** | JWT 无状态鉴权、BCrypt 密码、RBAC 管理员/用户隔离 |
+| **安全意识** | Sa-Token + BCrypt + RBAC 管理员/用户隔离 |
 | **产品 & UI** | 档期日期选择器、AI 悬浮导购、装备大厅商业化卡片、管理后台大屏 |
-| **文档与交付** | README、快速体验指南、SQL 迁移脚本齐全 |
+| **部署与交付** | Docker Compose、README/DEMO 文档、SQL 种子与迁移脚本 |
 
 ---
 
@@ -61,9 +61,9 @@
 
 ## 技术栈（面试可展开）
 
-- **后端：** Java 17 · Spring Boot 3 · MyBatis-Plus · Spring Security · Redis · Redisson · JWT  
-- **前端：** Vue 3 · Element Plus · ECharts · Vite  
-- **数据库：** MySQL 8  
+- **后端：** Java 17 · Spring Boot 3 · MyBatis-Plus · Sa-Token · Redis · Redisson · Knife4j  
+- **前端：** Vue 3 · Element Plus · ECharts · Vite（中文 locale）  
+- **数据库：** MySQL 8 · Docker Compose 可选  
 - **AI（可选）：** DeepSeek 等 OpenAI 兼容 Chat Completions API  
 
 ---

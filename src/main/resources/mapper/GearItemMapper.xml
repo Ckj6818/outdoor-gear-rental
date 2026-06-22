@@ -21,37 +21,51 @@
         <include refid="Base_Column_List"/>
         FROM gear_item
         WHERE gear_id = #{gearId}
-          AND status = 0
+          AND status = 1
         LIMIT 1
         FOR UPDATE
     </select>
 
     <update id="markAsRented">
         UPDATE gear_item
-        SET status = 1
-        WHERE id = #{id}
-          AND status = 0
-    </update>
-
-    <update id="markAsPendingInspection">
-        UPDATE gear_item
         SET status = 2
         WHERE id = #{id}
           AND status = 1
     </update>
 
-    <update id="markInspectionPassed">
+    <update id="markAsAvailableFromRenting">
         UPDATE gear_item
-        SET status = 0
+        SET status = 1
         WHERE id = #{id}
           AND status = 2
     </update>
 
-    <update id="markAsRepairing">
+    <update id="markAsPendingInspection">
         UPDATE gear_item
         SET status = 3
         WHERE id = #{id}
           AND status = 2
+    </update>
+
+    <update id="markInspectionPassed">
+        UPDATE gear_item
+        SET status = 1
+        WHERE id = #{id}
+          AND status = 3
+    </update>
+
+    <update id="markAsRepairing">
+        UPDATE gear_item
+        SET status = 4
+        WHERE id = #{id}
+          AND status = 3
+    </update>
+
+    <update id="updateStatusIfMatch">
+        UPDATE gear_item
+        SET status = #{targetStatus}
+        WHERE id = #{id}
+          AND status = #{expectedStatus}
     </update>
 
 </mapper>

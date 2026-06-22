@@ -21,6 +21,11 @@ public interface GearItemMapper extends BaseMapper<GearItem> {
     int markAsRented(@Param("id") Long id);
 
     /**
+     * 超时未支付取消：将租赁中实例恢复为待租。
+     */
+    int markAsAvailableFromRenting(@Param("id") Long id);
+
+    /**
      * 将借出中实例标记为待质检
      *
      * @return 受影响行数，0 表示实例状态已变更
@@ -40,4 +45,14 @@ public interface GearItemMapper extends BaseMapper<GearItem> {
      * @return 受影响行数，0 表示实例状态已变更
      */
     int markAsRepairing(@Param("id") Long id);
+
+    /**
+     * 按期望状态更新为目标状态（用于管理员手动流转）。
+     *
+     * @return 受影响行数，0 表示当前状态与期望不符
+     */
+    int updateStatusIfMatch(
+            @Param("id") Long id,
+            @Param("expectedStatus") Integer expectedStatus,
+            @Param("targetStatus") Integer targetStatus);
 }

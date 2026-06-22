@@ -1,5 +1,8 @@
 package com.outdoor.rental.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotRoleException;
+import cn.dev33.satoken.exception.SaTokenException;
 import com.outdoor.rental.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -20,6 +23,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public Result<Void> handleBusinessException(BusinessException e) {
         return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    public Result<Void> handleNotLoginException(NotLoginException e) {
+        return Result.fail(401, "未登录或 Token 已失效，请重新登录");
+    }
+
+    @ExceptionHandler(NotRoleException.class)
+    public Result<Void> handleNotRoleException(NotRoleException e) {
+        return Result.fail(403, "无权访问该资源");
+    }
+
+    @ExceptionHandler(SaTokenException.class)
+    public Result<Void> handleSaTokenException(SaTokenException e) {
+        log.warn("Sa-Token 鉴权异常: {}", e.getMessage());
+        return Result.fail(401, "未登录或 Token 已失效，请重新登录");
     }
 
     @ExceptionHandler(AuthenticationException.class)

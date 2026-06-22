@@ -1,15 +1,14 @@
 package com.outdoor.rental.aspect;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.outdoor.rental.annotation.LogOperation;
-import com.outdoor.rental.security.SecurityUser;
+import com.outdoor.rental.security.AuthRoles;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -69,17 +68,10 @@ public class SysLogAspect {
     }
 
     private String resolveOperator() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (!StpUtil.isLogin()) {
             return "anonymous";
         }
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof SecurityUser user) {
-            return user.getUsername();
-        }
-        if ("anonymousUser".equals(principal)) {
-            return "anonymous";
-        }
-        return authentication.getName();
+        Object username = StpUtil.getSession().get(AuthRoles.SESSION_USERNAME);
+        return username != null ? String.valueOf(username) : StpUtil.getLoginIdAsString();
     }
 }

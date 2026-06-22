@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/auth'
+import { isAdminRole, setAuthSession } from '@/utils/auth'
 
 const router = useRouter()
 const loading = ref(false)
@@ -17,12 +18,14 @@ async function handleLogin() {
   try {
     const res = await login(form)
     const data = res.data
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('userId', String(data.userId))
-    localStorage.setItem('username', data.username)
-    localStorage.setItem('role', String(data.role ?? 1))
+    setAuthSession({
+      token: data.token,
+      userId: data.userId,
+      username: data.username,
+      role: data.role
+    })
     ElMessage.success('登录成功')
-    router.push('/gears')
+    router.push(isAdminRole(data.role) ? '/admin/dashboard' : '/gears')
   } finally {
     loading.value = false
   }

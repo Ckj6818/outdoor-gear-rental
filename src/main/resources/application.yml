@@ -21,7 +21,19 @@ spring:
       database: 0
       timeout: 3000ms
 
-# JWT 配置（secret 长度至少 32 字符，生产环境请替换为随机密钥）
+# 装备列表 Redis 缓存：gearPage（TTL 1 小时，见 RedisConfig.GEAR_PAGE_TTL）
+# Sa-Token 配置（Token 通过 Authorization: Bearer xxx 传递，与前端现有写法兼容）
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  is-log: false
+  is-read-header: true
+
+# JWT 配置（保留字段供迁移参考，鉴权已切换为 Sa-Token）
 jwt:
   secret: outdoor-gear-rental-jwt-secret-key-2025-change-in-production
   expiration: 86400000
@@ -31,6 +43,13 @@ rental:
   lock:
     wait-seconds: 3
     lease-seconds: 15
+  order:
+    pay-timeout-minutes: 15   # 待支付订单超时自动取消（分钟）
+    timeout-cancel-enabled: true
+    auto-config-redis-notify: true
+
+# 订单超时取消依赖 Redis 键过期事件，请确保 Redis 已执行：
+# CONFIG SET notify-keyspace-events Ex
 
 # AI 导购（OpenAI 兼容接口，支持 DeepSeek / 通义千问等）
 ai:
@@ -53,6 +72,18 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+
+# Knife4j / SpringDoc 接口文档（Spring Boot 3 使用 OpenAPI 3）
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
 
 logging:
   level:

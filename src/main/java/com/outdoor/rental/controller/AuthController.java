@@ -19,7 +19,7 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     * 用户登录，返回 JWT Token
+     * 用户登录，返回 Sa-Token（Authorization: Bearer xxx）
      * POST /api/auth/login
      */
     @PostMapping("/login")

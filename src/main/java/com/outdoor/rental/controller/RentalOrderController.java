@@ -1,17 +1,21 @@
 package com.outdoor.rental.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.outdoor.rental.annotation.LogOperation;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.common.Result;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
 import com.outdoor.rental.dto.InspectOrderDTO;
+import com.outdoor.rental.dto.OrderSettleDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.service.RentalOrderService;
 import com.outdoor.rental.vo.OccupiedDateRangeVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "租赁订单", description = "用户下单、支付、归还等订单流程")
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -57,11 +62,7 @@ public class RentalOrderController {
         return Result.success(rentalOrderService.getById(id));
     }
 
-    /**
-     * 租赁下单（需携带 JWT Token）
-     * POST /api/orders
-     * Header: Authorization: Bearer {token}
-     */
+    @Operation(summary = "租赁下单", description = "锁定库存并创建待支付订单，15 分钟内未支付将自动取消。需在 Header 携带 Authorization: Bearer {token}")
     @PostMapping
     @LogOperation("租赁下单")
     public Result<RentalOrder> createRentalOrder(@RequestBody @Valid CreateRentalOrderDTO dto) {
@@ -69,12 +70,11 @@ public class RentalOrderController {
         return Result.success("下单成功", order);
     }
 
-    /**
-     * 模拟支付
-     * PUT /api/orders/{id}/pay
-     */
+    @Operation(summary = "模拟支付", description = "待支付订单支付成功后进入借出中状态，并移除超时取消计时")
     @PutMapping("/{id}/pay")
-    public Result<RentalOrder> payOrder(@PathVariable Long id) {
+    public Result<RentalOrder> payOrder(
+            @Parameter(description = "订单 ID", required = true, example = "1001")
+            @PathVariable Long id) {
         RentalOrder order = rentalOrderService.payOrder(id);
         return Result.success("支付成功", order);
     }
@@ -124,7 +124,7 @@ class AdminRentalOrderController {
      * GET /api/admin/orders?orderStatus=4&pageNum=1&pageSize=10
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @SaCheckRole("ADMIN")
     public Result<PageResult<RentalOrder>> page(RentalOrderQueryDTO query) {
         return Result.success(rentalOrderService.adminPageQuery(query));
     }
@@ -134,10 +134,25 @@ class AdminRentalOrderController {
      * POST /api/admin/orders/inspect
      */
     @PostMapping("/inspect")
-    @PreAuthorize("hasRole('ADMIN')")
+    @SaCheckRole("ADMIN")
     @LogOperation("管理员质检")
     public Result<RentalOrder> inspectOrder(@RequestBody @Valid InspectOrderDTO dto) {
         RentalOrder order = rentalOrderService.inspectOrder(dto);
         return Result.success("质检完成", order);
+    }
+
+    /**
+     * 订单结算：计算押金退还并完结订单
+     * POST /api/admin/orders/settle
+     * <p>
+     * 实际退还 = 押金 - 赔偿金；订单状态更新为「已完成」(6)
+     * </p>
+     */
+    @PostMapping("/settle")
+    @SaCheckRole("ADMIN")
+    @LogOperation("订单结算")
+    public Result<RentalOrder> settleOrder(@RequestBody @Valid OrderSettleDTO dto) {
+        RentalOrder order = rentalOrderService.settleOrder(dto);
+        return Result.success("结算完成", order);
     }
 }

@@ -2,32 +2,23 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AiChatBox from '@/components/AiChatBox.vue'
+import { useAuth } from '@/utils/auth'
+import { zhCn } from '@/locale'
+
+const locale = zhCn
 
 const route = useRoute()
 const router = useRouter()
+const { authState, isLoggedIn, isAdmin, clearAuthSession } = useAuth()
 
 const searchOpen = ref(false)
 const searchKeyword = ref('')
 const searchInputRef = ref(null)
 
-const username = computed(() => localStorage.getItem('username') || '')
-const isLoggedIn = computed(() => !!localStorage.getItem('token'))
-
-const user = computed(() => {
-  if (!isLoggedIn.value) return null
-  const roleRaw = localStorage.getItem('role')
-  return {
-    userId: localStorage.getItem('userId'),
-    username: localStorage.getItem('username') || '',
-    role: roleRaw === null || roleRaw === '' ? 1 : Number(roleRaw)
-  }
-})
-
-const isAdmin = computed(() => user.value?.role === 0)
 const isLoginPage = computed(() => route.path === '/login')
 
 const avatarText = computed(() => {
-  const name = username.value.trim()
+  const name = (authState.username || '').trim()
   return name ? name.charAt(0).toUpperCase() : 'U'
 })
 
@@ -78,6 +69,9 @@ function handleUserCommand(cmd) {
     case 'orders':
       router.push('/orders')
       break
+    case 'dashboard':
+      router.push('/admin/dashboard')
+      break
     case 'gear-manage':
       router.push('/admin/gears')
       break
@@ -96,10 +90,7 @@ function handleUserCommand(cmd) {
 }
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('username')
-  localStorage.removeItem('role')
+  clearAuthSession()
   router.push('/login')
 }
 
@@ -121,18 +112,20 @@ watch(
 </script>
 
 <template>
+  <el-config-provider :locale="locale">
   <div class="layout">
     <header v-if="!isLoginPage" class="global-header">
       <div class="global-header__shell">
         <!-- 主导航行 -->
         <div class="primary-nav">
           <div class="header-left">
-            <button type="button" class="brand" @click="goHome">GEAR RENTAL</button>
+            <button type="button" class="brand" @click="goHome">山行 · 装备租赁</button>
           </div>
 
           <nav class="header-center" aria-label="主导航">
             <router-link to="/gears" class="nav-link">装备大厅</router-link>
-            <router-link to="/orders" class="nav-link">我的订单</router-link>
+            <router-link v-if="isLoggedIn" to="/orders" class="nav-link">我的订单</router-link>
+            <router-link v-if="isAdmin" to="/admin/dashboard" class="nav-link">数据看板</router-link>
           </nav>
 
           <div class="header-right">
@@ -155,7 +148,8 @@ watch(
                   <el-dropdown-menu>
                     <el-dropdown-item command="orders">我的订单</el-dropdown-item>
                     <template v-if="isAdmin">
-                      <el-dropdown-item divided command="gear-manage">⚙️ 装备管理</el-dropdown-item>
+                      <el-dropdown-item divided command="dashboard">📊 数据看板</el-dropdown-item>
+                      <el-dropdown-item command="gear-manage">⚙️ 装备管理</el-dropdown-item>
                       <el-dropdown-item command="order-manage">📦 全部订单管理</el-dropdown-item>
                       <el-dropdown-item command="user-manage">👤 管理员账号</el-dropdown-item>
                     </template>
@@ -165,8 +159,8 @@ watch(
               </el-dropdown>
             </template>
             <template v-else>
-              <button type="button" class="auth-link" @click="goLogin">Log In</button>
-              <button type="button" class="auth-link auth-link--emphasis" @click="goSignup">Sign Up</button>
+              <button type="button" class="auth-link" @click="goLogin">登录</button>
+              <button type="button" class="auth-link auth-link--emphasis" @click="goSignup">注册</button>
             </template>
           </div>
         </div>
@@ -208,6 +202,7 @@ watch(
 
     <AiChatBox v-if="!isLoginPage" />
   </div>
+  </el-config-provider>
 </template>
 
 <style scoped>

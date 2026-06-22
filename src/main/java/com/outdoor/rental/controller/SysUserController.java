@@ -10,8 +10,8 @@ import com.outdoor.rental.dto.SysUserUpdateDTO;
 import com.outdoor.rental.entity.SysUser;
 import com.outdoor.rental.service.SysUserService;
 import jakarta.validation.Valid;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/admin/system/user")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@SaCheckRole("ADMIN")
 public class SysUserController {
 
     private final SysUserService sysUserService;

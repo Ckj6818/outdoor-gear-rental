@@ -15,6 +15,10 @@
         <result column="actual_return_time"     property="actualReturnTime"/>
         <result column="order_status"           property="orderStatus"/>
         <result column="total_fee"              property="totalFee"/>
+        <result column="rent_amount"            property="rentAmount"/>
+        <result column="deposit_amount"         property="depositAmount"/>
+        <result column="compensation_amount"    property="compensationAmount"/>
+        <result column="actual_refund"          property="actualRefund"/>
         <result column="has_damage_waiver"      property="hasDamageWaiver"/>
         <result column="waiver_fee"             property="waiverFee"/>
         <result column="remark"                 property="remark"/>
@@ -25,6 +29,7 @@
     <sql id="Base_Column_List">
         id, order_no, user_id, gear_id, item_id, rental_days, rent_out_time,
         expected_return_time, actual_return_time, order_status, total_fee,
+        rent_amount, deposit_amount, compensation_amount, actual_refund,
         has_damage_waiver, waiver_fee, remark, create_time, update_time
     </sql>
 
@@ -63,5 +68,17 @@
           AND rent_out_time IS NOT NULL
         ORDER BY rent_out_time ASC
     </select>
+
+    <update id="cancelIfPendingPayment">
+        UPDATE rental_order
+        SET order_status = #{cancelledStatus},
+            remark = CASE
+                WHEN remark IS NULL OR remark = '' THEN #{cancelRemark}
+                WHEN remark LIKE CONCAT('%', #{cancelRemark}, '%') THEN remark
+                ELSE CONCAT(remark, '；', #{cancelRemark})
+            END
+        WHERE id = #{orderId}
+          AND order_status = #{pendingStatus}
+    </update>
 
 </mapper>

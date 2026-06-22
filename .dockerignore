@@ -1,0 +1,24 @@
+# Git / IDE
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+
+# 文档与脚本（不参与后端镜像）
+docs
+scripts
+*.md
+*.bat
+*.ps1
+
+# 前端（后端镜像单独构建）
+frontend
+
+# Maven 本地产物（容器内重新构建）
+target
+
+# 本地密钥
+.env
+.env.*
+**/application-local.yml

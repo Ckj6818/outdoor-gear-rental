@@ -9,6 +9,8 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+import com.outdoor.rental.enums.GearItemStatusEnum;
+
 @Data
 @TableName("gear_item")
 public class GearItem {
@@ -22,7 +24,10 @@ public class GearItem {
     /** 唯一序列号 */
     private String snCode;
 
-    /** 实例状态：0-在库，1-借出中，2-待质检，3-维修中，4-报废 */
+    /**
+     * 实例状态，取值见 {@link GearItemStatusEnum}：
+     * 1-待租、2-租赁中、3-归还待检查、4-清洗/维修中
+     */
     private Integer status;
 
     @TableField(fill = FieldFill.INSERT)

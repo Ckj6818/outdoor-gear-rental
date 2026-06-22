@@ -6,16 +6,19 @@ import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.config.RentalLockProperties;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
 import com.outdoor.rental.dto.InspectOrderDTO;
+import com.outdoor.rental.dto.OrderSettleDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.GearInfo;
 import com.outdoor.rental.entity.GearItem;
 import com.outdoor.rental.entity.RentalOrder;
+import com.outdoor.rental.enums.RentalOrderStatusEnum;
 import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.GearInfoMapper;
 import com.outdoor.rental.mapper.GearItemMapper;
 import com.outdoor.rental.mapper.RentalOrderMapper;
 import com.outdoor.rental.security.SecurityUtils;
 import com.outdoor.rental.service.GearInfoService;
+import com.outdoor.rental.service.OrderCancelRedisService;
 import com.outdoor.rental.service.RedisGearStockService;
 import com.outdoor.rental.service.RedisLockService;
 import com.outdoor.rental.service.RentalOrderService;
@@ -26,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,10 +41,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class RentalOrderServiceImpl implements RentalOrderService {
 
-    private static final int ORDER_STATUS_RETURNED = 3;
-    private static final int ORDER_STATUS_PENDING_INSPECTION = 4;
-    private static final int ORDER_STATUS_ABNORMAL = 5;
-
     private final RentalOrderMapper rentalOrderMapper;
     private final GearInfoMapper gearInfoMapper;
     private final GearItemMapper gearItemMapper;
@@ -48,6 +49,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
     private final RedisGearStockService redisGearStockService;
     private final RentalOrderTxService rentalOrderTxService;
     private final RentalLockProperties lockProperties;
+    private final OrderCancelRedisService orderCancelRedisService;
 
     @Override
     public PageResult<RentalOrder> pageQuery(RentalOrderQueryDTO query) {
@@ -115,7 +117,9 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         }
 
         try {
-            return rentalOrderTxService.createOrderInTransaction(userId, dto);
+            RentalOrder order = rentalOrderTxService.createOrderInTransaction(userId, dto);
+            orderCancelRedisService.scheduleAutoCancel(order.getId());
+            return order;
         } catch (Exception ex) {
             // MySQL 事务回滚后，必须补偿 Redis 预扣减，否则 Redis 库存会低于 DB 导致后续误拒单
             if (redisPreDeducted) {
@@ -133,12 +137,15 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         if (order.getOrderStatus() == null || order.getOrderStatus() != 0) {
             throw new BusinessException(400, "仅待支付订单可执行支付");
         }
+
+        orderCancelRedisService.removeAutoCancelTimer(orderId);
+
         if (order.getRentalDays() == null || order.getRentalDays() <= 0) {
             throw new BusinessException(400, "订单租赁天数异常，无法支付");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        order.setOrderStatus(1);
+        order.setOrderStatus(RentalOrderStatusEnum.RENTING.getCode());
         order.setRentOutTime(now);
         order.setExpectedReturnTime(now.plusDays(order.getRentalDays()));
         rentalOrderMapper.updateById(order);
@@ -154,7 +161,8 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         RentalOrder order = getOrderOwnedByUser(orderId, userId);
 
         if (order.getOrderStatus() == null
-                || (order.getOrderStatus() != 1 && order.getOrderStatus() != 2)) {
+                || (order.getOrderStatus() != RentalOrderStatusEnum.RENTING.getCode()
+                && order.getOrderStatus() != RentalOrderStatusEnum.OVERDUE.getCode())) {
             throw new BusinessException(400, "仅借出中或已逾期订单可归还");
         }
 
@@ -163,7 +171,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        order.setOrderStatus(ORDER_STATUS_PENDING_INSPECTION);
+        order.setOrderStatus(RentalOrderStatusEnum.PENDING_INSPECTION.getCode());
         order.setActualReturnTime(now);
 
         if (order.getExpectedReturnTime() != null && now.isAfter(order.getExpectedReturnTime())) {
@@ -191,7 +199,8 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         }
 
         RentalOrder order = getById(dto.getOrderId());
-        if (order.getOrderStatus() == null || order.getOrderStatus() != ORDER_STATUS_PENDING_INSPECTION) {
+        if (order.getOrderStatus() == null
+                || order.getOrderStatus() != RentalOrderStatusEnum.PENDING_INSPECTION.getCode()) {
             throw new BusinessException(400, "仅待质检订单可执行质检");
         }
         if (order.getItemId() == null) {
@@ -211,7 +220,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         order.setRemark(appendRemark(order.getRemark(), dto.getRemark()));
 
         if (Boolean.TRUE.equals(dto.getIsPassed())) {
-            order.setOrderStatus(ORDER_STATUS_RETURNED);
+            order.setOrderStatus(RentalOrderStatusEnum.RETURNED.getCode());
             int itemRows = gearItemMapper.markInspectionPassed(order.getItemId());
             if (itemRows == 0) {
                 throw new BusinessException(400, "装备实例状态异常，无法完成质检");
@@ -225,7 +234,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
             gearInfoService.applyLifecycleAfterInspectionPass(order.getGearId());
             log.info("管理员质检通过订单 [{}]，装备实例 [{}] 已回库", order.getOrderNo(), gearItem.getSnCode());
         } else {
-            order.setOrderStatus(ORDER_STATUS_ABNORMAL);
+            order.setOrderStatus(RentalOrderStatusEnum.ABNORMAL.getCode());
             int itemRows = gearItemMapper.markAsRepairing(order.getItemId());
             if (itemRows == 0) {
                 throw new BusinessException(400, "装备实例状态异常，无法完成质检");
@@ -235,6 +244,38 @@ public class RentalOrderServiceImpl implements RentalOrderService {
 
         rentalOrderMapper.updateById(order);
         return order;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RentalOrder settleOrder(OrderSettleDTO dto) {
+        RentalOrder order = getById(dto.getOrderId());
+        Integer status = order.getOrderStatus();
+        if (status == null
+                || (status != RentalOrderStatusEnum.RETURNED.getCode()
+                && status != RentalOrderStatusEnum.ABNORMAL.getCode())) {
+            throw new BusinessException(400, "仅已归还/待结算或异常订单可执行结算");
+        }
+
+        BigDecimal deposit = defaultAmount(order.getDepositAmount());
+        BigDecimal compensation = defaultAmount(dto.getCompensationAmount());
+        if (compensation.compareTo(deposit) > 0) {
+            throw new BusinessException(400, "赔偿金不能超过押金");
+        }
+
+        BigDecimal actualRefund = deposit.subtract(compensation).setScale(2, RoundingMode.HALF_UP);
+        order.setCompensationAmount(compensation);
+        order.setActualRefund(actualRefund);
+        order.setOrderStatus(RentalOrderStatusEnum.COMPLETED.getCode());
+
+        rentalOrderMapper.updateById(order);
+        log.info("订单 [{}] 结算完成：押金 {}，赔偿 {}，实际退还 {}",
+                order.getOrderNo(), deposit, compensation, actualRefund);
+        return order;
+    }
+
+    private BigDecimal defaultAmount(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     @Override
@@ -312,7 +353,7 @@ public class RentalOrderServiceImpl implements RentalOrderService {
         Integer status = order.getOrderStatus();
         LocalDate today = LocalDate.now();
 
-        if (status != null && status == ORDER_STATUS_PENDING_INSPECTION) {
+        if (status != null && status == RentalOrderStatusEnum.PENDING_INSPECTION.getCode()) {
             LocalDate endDate = today;
             if (order.getActualReturnTime() != null) {
                 endDate = order.getActualReturnTime().toLocalDate();

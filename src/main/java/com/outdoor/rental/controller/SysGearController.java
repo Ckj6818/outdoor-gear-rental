@@ -1,5 +1,6 @@
 package com.outdoor.rental.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.outdoor.rental.annotation.LogOperation;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.common.Result;
@@ -10,7 +11,6 @@ import com.outdoor.rental.entity.SysGear;
 import com.outdoor.rental.service.SysGearService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/admin/system/gear")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@SaCheckRole("ADMIN")
 public class SysGearController {
 
     private final SysGearService sysGearService;

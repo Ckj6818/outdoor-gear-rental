@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authState, isAdminRole } from '@/utils/auth'
 
 const routes = [
   {
@@ -48,6 +49,12 @@ const routes = [
     meta: { title: '登录' }
   },
   {
+    path: '/403',
+    name: 'Forbidden',
+    component: () => import('@/views/Forbidden.vue'),
+    meta: { title: '无权限' }
+  },
+  {
     path: '/admin/dashboard',
     name: 'AdminDashboard',
     component: () => import('@/views/admin/Dashboard.vue'),
@@ -82,13 +89,11 @@ router.beforeEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} - 户外装备租赁` : '户外装备租赁'
 
   if (to.meta.requiresAdmin) {
-    const role = localStorage.getItem('role')
-    const token = localStorage.getItem('token')
-    if (!token) {
-      return '/login'
+    if (!authState.token) {
+      return { path: '/login', query: { redirect: to.fullPath } }
     }
-    if (role !== '0') {
-      return '/gears'
+    if (!isAdminRole(authState.role)) {
+      return '/403'
     }
   }
 })

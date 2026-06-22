@@ -1,10 +1,10 @@
 package com.outdoor.rental.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.outdoor.rental.common.Result;
 import com.outdoor.rental.service.DashboardService;
 import com.outdoor.rental.vo.DashboardStatsVO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +21,7 @@ public class DashboardController {
      * GET /api/admin/dashboard/stats
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
+    @SaCheckRole("ADMIN")
     public Result<DashboardStatsVO> stats() {
         return Result.success(dashboardService.getStats());
     }

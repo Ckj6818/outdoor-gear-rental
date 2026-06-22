@@ -111,7 +111,7 @@ sequenceDiagram
 | **租赁档期** | 占用区间 API + 闭区间冲突算法 | 日历选租、归还日不可连租 |
 | **AI 导购** | 轻量级 RAG + Prompt 结构化 JSON | 对话式推荐、缩短决策链路 |
 | **缓存** | Spring Cache + Redis | 装备大厅读多写少加速 |
-| **安全** | JWT + BCrypt + RBAC | 无状态鉴权、权限隔离 |
+| **安全** | Sa-Token + BCrypt + RBAC | 无状态 Token 鉴权、权限隔离 |
 | **审计** | `@LogOperation` AOP | 操作人 / IP / 耗时记录 |
 | **前端** | Vue 3 + Element Plus + ECharts | 商业化 UI + 数据可视化 |
 
@@ -121,31 +121,51 @@ sequenceDiagram
 
 ### 环境
 
-JDK 17+ · Maven 3.9+ · Node.js 18+ · MySQL 8+ · Redis 6+（可选，未启动时部分能力降级）
+JDK 17+ · Maven 3.9+ · Node.js 18+ · MySQL 8+ · Redis 6+ · Docker（可选）
 
-### 1. 克隆 & 初始化
-
-```bash
-git clone https://github.com/Ckj6818/outdoor-gear-rental.git
-cd outdoor-gear-rental
-mysql -u root -p < sql/init.sql
-```
-
-已有数据库时，按需执行 `sql/` 下增量脚本（如 `alter_gear_deposit.sql`）。
-
-### 2. 配置 & 启动
+### 方式 A：Docker 一键编排（推荐演示）
 
 ```powershell
-# 复制本地配置（MySQL 密码、可选 AI Key）
+git clone https://github.com/Ckj6818/outdoor-gear-rental.git
+cd outdoor-gear-rental
+
+# 仅启动 MySQL + Redis（本地开发后端/前端）
+docker compose -p outdoor-gear up -d mysql redis
+
+# 或构建并启动全栈（MySQL + Redis + 后端 + 前端 Nginx）
+docker compose up -d --build
+```
+
+- 全栈访问：http://localhost（前端） · http://localhost:8081/doc.html（Knife4j API 文档）
+- 默认 MySQL 密码：`123456`（可通过环境变量 `MYSQL_PASSWORD` 覆盖）
+
+### 方式 B：本地开发（前后端分离）
+
+```powershell
+# 1. 初始化数据库（首次）
+mysql -u root -p < sql/init.sql
+
+# 已有库时按需执行增量脚本，例如：
+#   sql/seed_gear_items.sql      — 补全 gear_item 实例（下单必需）
+#   sql/fix_user_passwords.sql   — 修复测试账号 BCrypt 密码
+
+# 2. 复制本地配置（MySQL 密码、可选 AI Key）
 copy src\main\resources\application-local.yml.example src\main\resources\application-local.yml
 
-# 后端
-$env:MYSQL_PASSWORD = "123456"
-mvn spring-boot:run          # → http://localhost:8081
-
-# 前端
-cd frontend && npm install && npm run dev   # → http://localhost:5173
+# 3. 一键启动（会打开两个 PowerShell 窗口）
+.\scripts\run-dev.ps1
+# 停止：.\scripts\stop-dev.ps1
 ```
+
+手动启动：
+
+```powershell
+$env:MYSQL_PASSWORD = "123456"
+.\scripts\run-backend.ps1    # → http://localhost:8081
+.\scripts\run-frontend.ps1   # → http://localhost:5173
+```
+
+**Cursor / VS Code 提示：** 日常开发请用上方脚本或 **Tasks: Run Task → 全栈开发**，避免用「断点调试」启动 Vite/Spring Boot，否则停止调试会连带中断服务。
 
 **AI 导购（可选）：** 在 `application-local.yml` 或环境变量 `AI_API_KEY` 中配置 DeepSeek 等 OpenAI 兼容 API Key。未配置时自动启用 Mock 模式（基于库存关键词推荐，便于答辩演示）。
 
@@ -167,7 +187,9 @@ outdoor-gear-rental/
 ├── docs/
 │   ├── HR.md                 # 给 HR 的一页纸说明 ⭐
 │   └── DEMO.md               # 3 分钟体验指南 ⭐
-├── sql/                      # 初始化 + 增量迁移
+├── docker-compose.yml        # MySQL + Redis + 全栈编排
+├── scripts/                  # run-dev / stop-dev 等启动脚本
+├── sql/                      # init.sql + 增量迁移（gear_item 种子、密码修复等）
 ├── src/main/java/            # Spring Boot 后端
 │   └── com/outdoor/rental/
 │       ├── service/RedisGearStockService.java   # Lua 库存预扣减
@@ -196,6 +218,7 @@ outdoor-gear-rental/
 | GET | `/api/admin/system/gear` | 装备管理 |
 | GET | `/api/admin/system/user` | 管理员管理 |
 | POST | `/api/admin/orders/inspect` | 质检闭环 |
+| GET | `/doc.html` | Knife4j 接口文档（Swagger UI） |
 
 ---
 

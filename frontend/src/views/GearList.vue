@@ -6,22 +6,11 @@ import GearCard from '@/components/GearCard.vue'
 import GearBookingModal from '@/components/GearBookingModal.vue'
 import { getGearPage } from '@/api/gear'
 import { getGearImages, getFallbackGearImage } from '@/utils/gearImages'
+import { useAuth } from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()
-
-const user = computed(() => {
-  const token = localStorage.getItem('token')
-  if (!token) return null
-  const roleRaw = localStorage.getItem('role')
-  return {
-    userId: localStorage.getItem('userId'),
-    username: localStorage.getItem('username') || '',
-    role: roleRaw === null || roleRaw === '' ? 1 : Number(roleRaw)
-  }
-})
-
-const isAdmin = computed(() => user.value?.role === 0)
+const { isAdmin } = useAuth()
 
 const loading = ref(false)
 const listReady = ref(false)

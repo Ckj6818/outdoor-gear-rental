@@ -81,6 +81,10 @@ public class RentalOrderTxServiceImpl implements RentalOrderTxService {
         order.setItemId(gearItem.getId());
         order.setRentalDays(dto.getRentalDays());
         order.setTotalFee(totalFee);
+        order.setRentAmount(baseRent);
+        order.setDepositAmount(gearInfo.getDeposit() != null ? gearInfo.getDeposit() : BigDecimal.ZERO);
+        order.setCompensationAmount(BigDecimal.ZERO);
+        order.setActualRefund(BigDecimal.ZERO);
         order.setHasDamageWaiver(hasWaiver);
         order.setWaiverFee(waiverFee);
         order.setOrderStatus(0);

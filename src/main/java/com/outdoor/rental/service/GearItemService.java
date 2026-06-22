@@ -1,5 +1,6 @@
 package com.outdoor.rental.service;
 
+import com.outdoor.rental.dto.GearItemStatusUpdateDTO;
 import com.outdoor.rental.entity.GearItem;
 
 import java.util.List;
@@ -17,4 +18,9 @@ public interface GearItemService {
      * @param count  生成数量
      */
     void generateItemsForGear(Long gearId, int count);
+
+    /**
+     * 更新装备实例状态（管理员手动流转或维修完成后回库）。
+     */
+    GearItem updateStatus(Long itemId, GearItemStatusUpdateDTO dto);
 }

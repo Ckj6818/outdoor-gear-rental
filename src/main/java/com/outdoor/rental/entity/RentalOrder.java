@@ -34,11 +34,23 @@ public class RentalOrder {
 
     private LocalDateTime actualReturnTime;
 
-    /** 订单状态：0-待支付，1-借出中，2-已逾期，3-已归还，4-待质检，5-异常完结/需赔偿 */
+    /** 订单状态：0-待支付，1-借出中，2-已逾期，3-已归还/待结算，4-待质检，5-异常/需赔偿，6-已完成 */
     private Integer orderStatus;
 
-    /** 订单总费用（基础租金 + 豁免金） */
+    /** 订单总费用（基础租金 + 豁免金，不含押金） */
     private BigDecimal totalFee;
+
+    /** 租金（元，不含豁免金） */
+    private BigDecimal rentAmount;
+
+    /** 押金（元） */
+    private BigDecimal depositAmount;
+
+    /** 损坏赔偿金（元），默认 0 */
+    private BigDecimal compensationAmount;
+
+    /** 实际退还金额（元）= 押金 - 赔偿金，默认 0 */
+    private BigDecimal actualRefund;
 
     /** 是否购买意外损坏豁免金 */
     private Boolean hasDamageWaiver;

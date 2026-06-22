@@ -24,11 +24,11 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig implements CachingConfigurer {
 
-    /** 装备大厅分页列表缓存名 */
+    /** 装备大厅分页列表缓存名（Redis Key 前缀：gearPage::） */
     public static final String GEAR_PAGE_CACHE = "gearPage";
 
-    /** 装备大厅分页缓存 TTL：10 分钟 */
-    private static final Duration GEAR_PAGE_TTL = Duration.ofMinutes(10);
+    /** 首页装备列表缓存 TTL：1 小时 */
+    private static final Duration GEAR_PAGE_TTL = Duration.ofHours(1);
 
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration() {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.outdoor.rental.mapper.GearStockCalendarMapper">
+
+    <resultMap id="BaseResultMap" type="com.outdoor.rental.entity.GearStockCalendar">
+        <id     column="id"       property="id"/>
+        <result column="gear_id"  property="gearId"/>
+        <result column="date"     property="stockDate"/>
+        <result column="stock"    property="stock"/>
+        <result column="version"  property="version"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, gear_id, date, stock, version
+    </sql>
+
+    <select id="selectForUpdateByGearAndDateRange" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM gear_stock_calendar
+        WHERE gear_id = #{gearId}
+          AND date &gt;= #{startDate}
+          AND date &lt;= #{endDate}
+        ORDER BY date ASC
+        FOR UPDATE
+    </select>
+
+    <update id="deductStockWithVersion">
+        UPDATE gear_stock_calendar
+        SET stock   = stock - #{count},
+            version = version + 1
+        WHERE id = #{id}
+          AND version = #{oldVersion}
+          AND stock - #{count} &gt;= 0
+    </update>
+
+</mapper>

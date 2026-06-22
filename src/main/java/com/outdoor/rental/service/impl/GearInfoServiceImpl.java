@@ -30,8 +30,20 @@ public class GearInfoServiceImpl implements GearInfoService {
 
     private final GearInfoMapper gearInfoMapper;
 
+    /**
+     * 装备大厅分页查询（首页列表 / 筛选列表）。
+     * <p>
+     * 使用 {@code @Cacheable} + Redis 缓存（推荐方案）：声明式、与 {@code @CacheEvict} 联动，
+     * 按查询条件生成 Key，未命中时查 MySQL 并写入 Redis，TTL 见 {@link RedisConfig}（1 小时）。
+     * {@code sync = true} 避免同一 Key 在高并发下缓存击穿。
+     * </p>
+     */
     @Override
-    @Cacheable(cacheNames = RedisConfig.GEAR_PAGE_CACHE, key = "@gearPageCacheKeyGenerator.generate(#query)")
+    @Cacheable(
+            cacheNames = RedisConfig.GEAR_PAGE_CACHE,
+            key = "@gearPageCacheKeyGenerator.generate(#query)",
+            sync = true
+    )
     public PageResult<GearInfo> pageQuery(GearInfoQueryDTO query) {
         GearInfoQueryDTO normalized = GearInfoQueryNormalizer.normalize(query);
         Page<GearInfo> page = new Page<>(normalized.getPageNum(), normalized.getPageSize());
@@ -82,7 +94,7 @@ public class GearInfoServiceImpl implements GearInfoService {
     @Override
     @CacheEvict(cacheNames = RedisConfig.GEAR_PAGE_CACHE, allEntries = true)
     public void evictPageCache() {
-        // 注解驱动清空缓存，方法体 intentionally empty
+        log.debug("已清空装备大厅 Redis 缓存 namespace={}", RedisConfig.GEAR_PAGE_CACHE);
     }
 
     @Override

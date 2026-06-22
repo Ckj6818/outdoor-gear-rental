@@ -1,8 +1,10 @@
 package com.outdoor.rental.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.outdoor.rental.dto.GearItemStatusUpdateDTO;
 import com.outdoor.rental.entity.GearInfo;
 import com.outdoor.rental.entity.GearItem;
+import com.outdoor.rental.enums.GearItemStatusEnum;
 import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.GearInfoMapper;
 import com.outdoor.rental.mapper.GearItemMapper;
@@ -17,8 +19,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class GearItemServiceImpl implements GearItemService {
-
-    private static final int STATUS_IN_STOCK = 0;
 
     private final GearItemMapper gearItemMapper;
     private final GearInfoMapper gearInfoMapper;
@@ -55,9 +55,26 @@ public class GearItemServiceImpl implements GearItemService {
             GearItem item = new GearItem();
             item.setGearId(gearId);
             item.setSnCode(buildSnCode(gearId));
-            item.setStatus(STATUS_IN_STOCK);
+            item.setStatus(GearItemStatusEnum.AVAILABLE.getCode());
             gearItemMapper.insert(item);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public GearItem updateStatus(Long itemId, GearItemStatusUpdateDTO dto) {
+        GearItem gearItem = getById(itemId);
+        Integer targetStatus = dto.getStatus();
+        if (!GearItemStatusEnum.isValid(targetStatus)) {
+            throw new BusinessException(400, "无效的装备状态，仅支持 1-待租、2-租赁中、3-归还待检查、4-清洗/维修中");
+        }
+        if (targetStatus.equals(gearItem.getStatus())) {
+            return gearItem;
+        }
+
+        gearItem.setStatus(targetStatus);
+        gearItemMapper.updateById(gearItem);
+        return gearItem;
     }
 
     private String buildSnCode(Long gearId) {

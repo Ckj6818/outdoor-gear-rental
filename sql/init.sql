@@ -76,7 +76,7 @@ CREATE TABLE gear_item (
     id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '装备实例主键ID',
     gear_id         BIGINT          NOT NULL COMMENT '关联装备SPU ID（gear_info.id）',
     sn_code         VARCHAR(64)     NOT NULL COMMENT '唯一序列号（如 OSP-36L-0001）',
-    status          TINYINT         NOT NULL DEFAULT 0 COMMENT '实例状态：0-在库，1-借出中，2-待质检，3-维修中，4-报废',
+    status          TINYINT         NOT NULL DEFAULT 1 COMMENT '实例状态：1-待租，2-租赁中，3-归还待检查，4-清洗/维修中',
     create_time     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
@@ -85,7 +85,7 @@ CREATE TABLE gear_item (
     KEY idx_status (status),
     CONSTRAINT fk_item_gear FOREIGN KEY (gear_id) REFERENCES gear_info (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT chk_item_status CHECK (status >= 0 AND status <= 4)
+    CONSTRAINT chk_item_status CHECK (status >= 1 AND status <= 4)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='装备实例表（SKU/SN）';
 
 -- ------------------------------------------------------------
@@ -101,8 +101,12 @@ CREATE TABLE rental_order (
     rent_out_time           DATETIME        DEFAULT NULL COMMENT '借出时间',
     expected_return_time    DATETIME        DEFAULT NULL COMMENT '预计归还时间',
     actual_return_time      DATETIME        DEFAULT NULL COMMENT '实际归还时间',
-    order_status            TINYINT         NOT NULL DEFAULT 0 COMMENT '订单状态：0-待支付，1-借出中，2-已逾期，3-已归还',
-    total_fee               DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '订单总费用（元，含豁免金）',
+    order_status            TINYINT         NOT NULL DEFAULT 0 COMMENT '订单状态：0-待支付，1-借出中，2-已逾期，3-已归还/待结算，4-待质检，5-异常/需赔偿，6-已完成',
+    total_fee               DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '订单总费用（元，含豁免金，不含押金）',
+    rent_amount             DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '租金（元，不含豁免金）',
+    deposit_amount          DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '押金（元）',
+    compensation_amount     DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '损坏赔偿金（元）',
+    actual_refund           DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '实际退还金额（元）= 押金 - 赔偿金',
     has_damage_waiver       TINYINT         NOT NULL DEFAULT 0 COMMENT '是否购买意外损坏豁免金：0-否，1-是',
     waiver_fee              DECIMAL(10, 2)  NOT NULL DEFAULT 0.00 COMMENT '意外损坏豁免金费用（元）',
     remark                  VARCHAR(255)    DEFAULT NULL COMMENT '备注',
@@ -133,14 +137,13 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ------------------------------------------------------------
 -- 用户测试数据
--- 密码均为 123456 的 BCrypt 哈希（$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH 为示例占位）
--- 实际开发中请使用后端统一加密策略
+-- 密码均为 123456 的 BCrypt 哈希（由 PasswordHashGenerator 生成）
 -- ------------------------------------------------------------
 INSERT INTO sys_user (username, password, role, phone, email, status) VALUES
-('admin',    '$2a$10$7EqJtq98hPCHXmF6i5gK0e7vK8Y5xQZ3mN2pL1oK9jH8gF7dS6aW5', 0, '13800000001', 'admin@outdoor-rental.com',  1),
-('zhangsan', '$2a$10$7EqJtq98hPCHXmF6i5gK0e7vK8Y5xQZ3mN2pL1oK9jH8gF7dS6aW5', 1, '13800000002', 'zhangsan@example.com',      1),
-('lisi',     '$2a$10$7EqJtq98hPCHXmF6i5gK0e7vK8Y5xQZ3mN2pL1oK9jH8gF7dS6aW5', 1, '13800000003', 'lisi@example.com',          1),
-('wangwu',   '$2a$10$7EqJtq98hPCHXmF6i5gK0e7vK8Y5xQZ3mN2pL1oK9jH8gF7dS6aW5', 1, '13800000004', 'wangwu@example.com',        1);
+('admin',    '$2b$10$ks3o0mVHM98G7AA5kX9YDuJwqDkk6UcyX0X0jRuRgNCyJnr/clVG.', 0, '13800000001', 'admin@outdoor-rental.com',  1),
+('zhangsan', '$2b$10$ks3o0mVHM98G7AA5kX9YDuJwqDkk6UcyX0X0jRuRgNCyJnr/clVG.', 1, '13800000002', 'zhangsan@example.com',      1),
+('lisi',     '$2b$10$ks3o0mVHM98G7AA5kX9YDuJwqDkk6UcyX0X0jRuRgNCyJnr/clVG.', 1, '13800000003', 'lisi@example.com',          1),
+('wangwu',   '$2b$10$ks3o0mVHM98G7AA5kX9YDuJwqDkk6UcyX0X0jRuRgNCyJnr/clVG.', 1, '13800000004', 'wangwu@example.com',        1);
 
 -- ------------------------------------------------------------
 -- 装备测试数据
@@ -171,6 +174,23 @@ INSERT INTO gear_info (gear_name, brand, category, daily_rent, total_stock, avai
 ('PocketRocket 2 炉具套装',    'MSR',           '炉具',       18.00, 15, 12, 'MSR PocketRocket 2 超轻气炉，含锅具，适合单人轻量化露营。',                        NULL, NULL, '/images/gears/16-main.jpg', '/images/gears/16-hover.jpg', 1),
 ('Distance Z 碳纤维登山杖',    'Black Diamond', '登山杖',     12.00, 20, 16, 'Black Diamond Distance Z 折叠碳纤维登山杖，轻量耐用，适合长距离徒步。',              NULL, NULL, '/images/gears/17-main.jpg', '/images/gears/17-hover.jpg', 1),
 ('Kestrel 48 超轻背包',        'Osprey',        '轻量化背包', 48.00, 7,  6,  'Osprey Kestrel 48，稳定背负与合理容量，适合2-3日轻装徒步。',                        NULL, NULL, '/images/gears/18-main.jpg', '/images/gears/18-hover.jpg', 1);
+
+-- ------------------------------------------------------------
+-- 装备实例测试数据（与 gear_info.total_stock / available_stock 对齐）
+-- status: 1-待租，2-租赁中（已借出部分）
+-- ------------------------------------------------------------
+INSERT INTO gear_item (gear_id, sn_code, status)
+SELECT
+    g.id,
+    CONCAT('SN-', g.id, '-', LPAD(n.n, 4, '0')),
+    CASE WHEN n.n <= g.available_stock THEN 1 ELSE 2 END
+FROM gear_info g
+JOIN (
+    SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+    UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+    UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+    UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20
+) n ON n.n <= g.total_stock;
 
 -- ------------------------------------------------------------
 -- 租赁订单测试数据

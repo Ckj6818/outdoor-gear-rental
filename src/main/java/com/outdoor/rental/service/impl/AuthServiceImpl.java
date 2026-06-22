@@ -1,12 +1,12 @@
 package com.outdoor.rental.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.outdoor.rental.config.JwtProperties;
 import com.outdoor.rental.dto.LoginDTO;
 import com.outdoor.rental.entity.SysUser;
 import com.outdoor.rental.exception.BusinessException;
 import com.outdoor.rental.mapper.SysUserMapper;
-import com.outdoor.rental.security.JwtUtil;
+import com.outdoor.rental.security.AuthRoles;
 import com.outdoor.rental.service.AuthService;
 import com.outdoor.rental.vo.LoginVO;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper sysUserMapper;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
-    private final JwtProperties jwtProperties;
 
     @Override
     public LoginVO login(LoginDTO loginDTO) {
@@ -36,11 +34,15 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, "用户名或密码错误");
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        // Sa-Token 登录：以 userId 作为 loginId，并在 Session 中附加角色等信息
+        StpUtil.login(user.getId());
+        StpUtil.getSession().set(AuthRoles.SESSION_ROLE, AuthRoles.fromDbRole(user.getRole()));
+        StpUtil.getSession().set(AuthRoles.SESSION_USERNAME, user.getUsername());
+
         return LoginVO.builder()
-                .token(token)
+                .token(StpUtil.getTokenValue())
                 .tokenType("Bearer")
-                .expiresIn(jwtProperties.getExpiration() / 1000)
+                .expiresIn(StpUtil.getTokenTimeout())
                 .userId(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())

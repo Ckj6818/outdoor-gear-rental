@@ -22,4 +22,15 @@ public interface RentalOrderMapper extends BaseMapper<RentalOrder> {
      * 查询某装备当前仍占用档期的有效订单（借出中 / 已逾期 / 待质检）。
      */
     List<RentalOrder> selectActiveOccupiedOrdersByGearId(@Param("gearId") Long gearId);
+
+    /**
+     * 待支付订单超时取消：仅当当前状态为待支付时更新为已取消。
+     *
+     * @return 受影响行数，0 表示订单已支付或已取消
+     */
+    int cancelIfPendingPayment(
+            @Param("orderId") Long orderId,
+            @Param("cancelledStatus") Integer cancelledStatus,
+            @Param("pendingStatus") Integer pendingStatus,
+            @Param("cancelRemark") String cancelRemark);
 }

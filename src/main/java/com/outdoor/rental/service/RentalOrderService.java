@@ -3,6 +3,7 @@ package com.outdoor.rental.service;
 import com.outdoor.rental.common.PageResult;
 import com.outdoor.rental.dto.CreateRentalOrderDTO;
 import com.outdoor.rental.dto.InspectOrderDTO;
+import com.outdoor.rental.dto.OrderSettleDTO;
 import com.outdoor.rental.dto.RentalOrderQueryDTO;
 import com.outdoor.rental.entity.RentalOrder;
 import com.outdoor.rental.vo.OccupiedDateRangeVO;
@@ -40,6 +41,11 @@ public interface RentalOrderService {
      * 管理员质检：通过则完结并恢复库存，异常则进入赔偿流程
      */
     RentalOrder inspectOrder(InspectOrderDTO dto);
+
+    /**
+     * 订单结算：计算实际退还金额（押金 - 赔偿金）并标记为已完成。
+     */
+    RentalOrder settleOrder(OrderSettleDTO dto);
 
     void update(RentalOrder rentalOrder);
 
