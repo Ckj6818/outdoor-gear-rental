@@ -24,8 +24,12 @@ public class AiConsultantProperties {
     /** HTTP 读超时（秒） */
     private int timeoutSeconds = 60;
 
-    /**
-     * 未配置 API Key 时是否启用本地 Mock（基于 RAG 装备列表的规则推荐，便于答辩演示）。
-     */
+    /** 未配置 API Key 时是否启用本地 Mock（基于 RAG 装备列表的规则推荐，便于答辩演示）。 */
     private boolean mockFallback = true;
+
+    /** 检索式 RAG 注入大模型的最大装备条数 */
+    private int ragMaxItems = 15;
+
+    /** 多轮对话保留的历史消息条数（user+assistant 合计） */
+    private int maxHistoryMessages = 8;
 }

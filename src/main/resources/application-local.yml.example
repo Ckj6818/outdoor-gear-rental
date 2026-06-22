@@ -5,7 +5,9 @@ spring:
     username: root
     password: 123456
 
-# AI 导购 API Key（也可通过环境变量 AI_API_KEY 注入）
+# AI 导购（API Key 也可通过环境变量 AI_API_KEY 注入）
 ai:
   consultant:
     api-key: your-deepseek-api-key
+    rag-max-items: 15
+    max-history-messages: 8

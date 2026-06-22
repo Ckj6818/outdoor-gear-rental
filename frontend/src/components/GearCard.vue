@@ -93,6 +93,14 @@ function handleClick() {
   border: none;
   box-shadow: none;
   padding: 0;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.gear-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .image-wrap {
@@ -109,8 +117,12 @@ function handleClick() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity;
+}
+
+.image-main,
+.image-hover {
+  transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: opacity;
 }
 
 .image-main {
@@ -150,12 +162,7 @@ function handleClick() {
   opacity: 0;
 }
 
-.gear-card:hover .image-main,
-.gear-card:hover .image-hover {
-  transform: scale(1.03);
-}
-
-.gear-card:hover .image-hover {
+.gear-card:hover .has-swap .image-hover {
   opacity: 1;
 }
 

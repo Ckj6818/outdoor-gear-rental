@@ -60,6 +60,18 @@ function formatRent(rent) {
   return `¥${value % 1 === 0 ? value.toFixed(0) : value.toFixed(2)}/天`
 }
 
+/** 构建多轮对话历史（不含欢迎语与当前未发送消息） */
+function buildChatHistory() {
+  const maxMessages = 8
+  const items = messages.value.filter(
+    (msg) => msg.role === 'user' || (msg.role === 'assistant' && msg.id !== 'welcome')
+  )
+  return items.slice(-maxMessages).map((msg) => ({
+    role: msg.role,
+    content: msg.role === 'user' ? msg.content : (msg.reply || msg.content || '')
+  }))
+}
+
 async function scrollToBottom(smooth = true) {
   await nextTick()
   const el = messageListRef.value
@@ -98,9 +110,15 @@ async function sendMessage() {
   inputText.value = ''
   await scrollToBottom()
 
+  const history = buildChatHistory()
+  // 历史中不含刚发送的当前提问（已在 question 参数中传递）
+  if (history.length > 0 && history[history.length - 1].role === 'user') {
+    history.pop()
+  }
+
   sending.value = true
   try {
-    const res = await consultAi(question)
+    const res = await consultAi(question, history)
     const { reply, recommendGears, isPlainText } = parseAiResponse(res.data)
 
     messages.value.push({

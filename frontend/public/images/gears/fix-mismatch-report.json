@@ -1,0 +1,34 @@
+{
+  "4": {
+    "main": [
+      "https://www.osprey.com/media/catalog/product/cache/bdd72cdc4bced30f3cf62267d5fe3824/e/x/exos58_s22_side_tungstengrey.jpg"
+    ],
+    "hover": [
+      "https://www.osprey.com/gb/media/catalog/product/_/0/_0002_exos58_s22_sideback_tungstengrey_10004019_web_2.jpg"
+    ]
+  },
+  "12": {
+    "main": [
+      "https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_ac8f45f7-a270-4aa2-89b1-bded70a9be24.jpg?v=1747239607"
+    ],
+    "hover": [
+      "https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_ac8f45f7-a270-4aa2-89b1-bded70a9be24.jpg?v=1747239607"
+    ]
+  },
+  "59": {
+    "main": [
+      "https://cdn.shopify.com/s/files/1/0301/4023/5913/files/27538700013.jpg?v=1747233436"
+    ],
+    "hover": [
+      "https://cdn.shopify.com/s/files/1/0301/4023/5913/files/27538700013.jpg?v=1747233436"
+    ]
+  },
+  "68": {
+    "main": [
+      "https://cdn.shopify.com/s/files/1/0301/4023/5913/files/b_1263ede6-045b-4f2e-89e5-4546432b2dec.jpg?v=1770930882"
+    ],
+    "hover": [
+      "https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw84212_BLK/images/hi-res/84212_BLK_alt1.jpg"
+    ]
+  }
+}

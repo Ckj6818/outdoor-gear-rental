@@ -16,9 +16,14 @@ public interface SysGearMapper extends BaseMapper<SysGear> {
      */
     @Select("""
             SELECT id,
-                   gear_name   AS name,
+                   gear_name        AS name,
+                   brand,
                    category,
-                   daily_rent  AS dailyRent
+                   daily_rent       AS dailyRent,
+                   available_stock  AS availableStock,
+                   condition_grade  AS conditionGrade,
+                   LEFT(description, 120)     AS description,
+                   LEFT(specifications, 100)  AS specifications
             FROM gear_info
             WHERE status = 1
               AND available_stock > 0

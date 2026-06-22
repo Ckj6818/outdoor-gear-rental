@@ -29,6 +29,6 @@ public class AiConsultantController {
      */
     @PostMapping("/consult")
     public Result<String> consult(@RequestBody @Valid AiConsultRequestDTO dto) {
-        return Result.success(aiConsultantService.consult(dto.getQuestion()));
+        return Result.success(aiConsultantService.consult(dto));
     }
 }

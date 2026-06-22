@@ -130,7 +130,7 @@ GEAR: dict[int, dict] = {
     65: {"campmor": "rab-neutrino-800-sleeping-bag"},
     66: {"cascade": "reactor-stove-systems"},
     67: {"campmor": "deuter-rain-cover-iii"},
-    68: {"direct": {"main": ["https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw84212_BLK/images/hi-res/84212_BLK.jpg"], "hover": ["https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw84212_BLK/images/hi-res/84212_BLK_alt1.jpg"]}},
+    68: {"direct": {"main": ["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/b_1263ede6-045b-4f2e-89e5-4546432b2dec.jpg?v=1770930882"], "hover": ["https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw84212_BLK/images/hi-res/84212_BLK_alt1.jpg"]}},
     69: {"campmor": "nemo-hornet-elite-osmo-1p-tent"},
     70: {"campmor": "osprey-ultralight-45-pack"},
 }

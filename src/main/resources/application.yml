@@ -41,6 +41,8 @@ ai:
     model: deepseek-chat
     timeout-seconds: 60
     mock-fallback: true
+    rag-max-items: 15
+    max-history-messages: 8
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml

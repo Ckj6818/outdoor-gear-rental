@@ -11,6 +11,13 @@ const DEFAULT_HOVER = LOCAL(1, 'hover')
 
 function pickImage(dbValue, localPath) {
   const value = (dbValue || '').trim()
+  // 本地路径优先；外链 CDN 在浏览器中常被防盗链拦截，统一回落到 public/images/gears/{id}-*.jpg
+  if (value.startsWith('/images/gears/')) {
+    return value
+  }
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return localPath
+  }
   return value || localPath
 }
 

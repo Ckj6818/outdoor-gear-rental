@@ -46,7 +46,15 @@
   {"id":65,"name":"Rab Neutrino 800","source":"Rab官方","main":[],"hover":[]},
   {"id":66,"name":"MSR Reactor 1.7L","source":"MSR官网","main":[],"hover":[]},
   {"id":67,"name":"Deuter Rain Cover","source":"Deuter官方","main":[],"hover":[]},
-  {"id":68,"name":"Patagonia Nano Puff","source":"Patagonia官网","main":[],"hover":[]},
+  {"id":68,"name":"Patagonia Nano Puff","source":"Patagonia官网","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/b_1263ede6-045b-4f2e-89e5-4546432b2dec.jpg?v=1770930882"],"hover":["https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw84212_BLK/images/hi-res/84212_BLK_alt1.jpg"]},
   {"id":69,"name":"NEMO Hornet Elite 1P","source":"NEMO官网","main":[],"hover":[]},
-  {"id":70,"name":"Osprey Ultralight 45","source":"Osprey官网","main":["https://www.osprey.com/media/catalog/product/cache/bdd72cdc4bced30f3cf62267d5fe3824/u/l/ultralight45_s23_side_tungstengrey.jpg"],"hover":[]}
+  {"id":70,"name":"Osprey Ultralight 45","source":"Osprey官网","main":["https://www.osprey.com/media/catalog/product/cache/bdd72cdc4bced30f3cf62267d5fe3824/u/l/ultralight45_s23_side_tungstengrey.jpg"],"hover":[]},
+  {"id":71,"name":"Columbia Watertight II","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/b_7ae646d3-ec5a-480b-9a48-e7cbcccf3b78.jpg?v=1760370884"],"hover":[]},
+  {"id":72,"name":"Marmot Trestles 30","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_e371be8a-554a-4db3-ba5c-013b9d81281a.png?v=1776185078"],"hover":[]},
+  {"id":73,"name":"Salomon X Ultra 4 GTX","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/L412892005_5d8f3bc8-7c72-4046-a489-fca6d7b0539f.jpg?v=1747434836"],"hover":[]},
+  {"id":74,"name":"Goal Zero Nomad 10","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/11900-3.jpg?v=1747417865"],"hover":[]},
+  {"id":75,"name":"CamelBak Rim Runner X30","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_8afceab6-31ce-49d1-b50a-13370861c122.jpg?v=1747154299"],"hover":[]},
+  {"id":76,"name":"Kelty Mistral 20","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_3bfdd849-44b8-420a-9eaa-342c7cbc6b85.jpg?v=1747239607"],"hover":[]},
+  {"id":77,"name":"Smartwool Intraknit Base Layer","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_97d5b750-f26e-4711-9268-9ad8ef226095.jpg?v=1747233259"],"hover":[]},
+  {"id":78,"name":"Jetboil MiniMo Carbon","source":"Campmor","main":["https://cdn.shopify.com/s/files/1/0301/4023/5913/files/a_b3973720-b607-41fd-92d8-7609a16f161e.jpg?v=1747238247"],"hover":[]}
 ]

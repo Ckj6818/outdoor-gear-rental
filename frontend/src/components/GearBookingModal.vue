@@ -112,6 +112,23 @@ function disabledDate(date) {
   return false
 }
 
+/** 为日历单元格附加语义 class，配合 popper 样式区分占用/过期（disabled-date 仍负责禁用逻辑） */
+function cellClassName(date) {
+  const day = startOfDay(date)
+  const today = startOfDay(new Date())
+
+  if (day < today) {
+    return 'booking-cell--past'
+  }
+  if (isDateInOccupied(day, occupiedRanges.value)) {
+    return 'booking-cell--occupied'
+  }
+  if (disabledDate(date)) {
+    return 'booking-cell--blocked'
+  }
+  return ''
+}
+
 function resetForm() {
   dateRange.value = null
   pickingStart.value = null
@@ -223,7 +240,10 @@ watch(
             start-placeholder="起租日"
             end-placeholder="归还日"
             format="YYYY-MM-DD"
+            popper-class="booking-date-picker-popper"
+            class="booking-date-picker"
             :disabled-date="disabledDate"
+            :cell-class-name="cellClassName"
             :disabled="occupiedLoading"
             style="width: 100%"
             @calendar-change="handleCalendarChange"
@@ -231,7 +251,8 @@ watch(
           />
           <p v-if="occupiedLoading" class="booking-hint">正在加载可租档期…</p>
           <p v-else class="booking-hint">
-            灰色日期为不可选（已过期或已被占用）；归还日不可跨越他人已租时段
+            <span class="booking-hint__legend booking-hint__legend--blocked" aria-hidden="true">12</span>
+            置灰并带删除线的日期不可选（已过期、已被占用或会与占用区间冲突）
           </p>
         </el-form-item>
 
@@ -333,6 +354,31 @@ watch(
   font-size: 12px;
   line-height: 1.5;
   color: var(--color-text-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.booking-hint__legend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.booking-hint__legend--blocked {
+  color: #b8b8b5;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.03);
+  cursor: not-allowed;
 }
 
 .booking-days {
@@ -402,5 +448,45 @@ watch(
 
 .gear-booking-modal :deep(.el-dialog__body) {
   padding-top: 8px;
+}
+</style>
+
+<!-- 日历面板 teleport 到 body，需非 scoped 样式配合 popper-class -->
+<style>
+.booking-date-picker-popper .el-date-table td.disabled {
+  pointer-events: none;
+  cursor: not-allowed !important;
+}
+
+.booking-date-picker-popper .el-date-table td.disabled .el-date-table-cell {
+  pointer-events: none;
+  cursor: not-allowed !important;
+  background-color: transparent !important;
+}
+
+.booking-date-picker-popper .el-date-table td.disabled:hover .el-date-table-cell {
+  background-color: transparent !important;
+}
+
+.booking-date-picker-popper .el-date-table td.disabled .el-date-table-cell__text {
+  color: #b8b8b5;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.22);
+  text-decoration-thickness: 1px;
+  opacity: 0.78;
+  cursor: not-allowed !important;
+}
+
+/* 已被他人占用的档期：略深灰，强调不可租 */
+.booking-date-picker-popper .el-date-table td.booking-cell--occupied.disabled .el-date-table-cell__text {
+  color: #a8a8a4;
+  text-decoration-color: rgba(0, 0, 0, 0.28);
+}
+
+/* 已过期：删除线稍浅，与占用区分 */
+.booking-date-picker-popper .el-date-table td.booking-cell--past.disabled .el-date-table-cell__text {
+  color: #c4c4c0;
+  text-decoration-color: rgba(0, 0, 0, 0.14);
+  opacity: 0.62;
 }
 </style>
